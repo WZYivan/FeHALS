@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+
+# Conda
+conda-meta/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# LaTeX
+doc/build/
+doc/LatexmkFiles/
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.xdv
+*.synctex.gz
+*.spl
+
+# OS
+.DS_Store
+Thumbs.db
+
+# FeHALS runtime
+backend/app/static/models/*
+backend/app/static/trajectories/*
+backend/app/static/configs/*
+backend/app/static/results/*
+!backend/app/static/**/.gitkeep

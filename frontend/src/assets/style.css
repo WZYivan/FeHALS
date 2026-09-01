@@ -1,0 +1,563 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  color: #212529;
+}
+
+/* ---------- 整体布局 ---------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  background: #1f2937;
+  color: #fff;
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-right: auto;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 按钮与状态 ---------- */
+.btn {
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #111827;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.btn:hover {
+  background: #e5e7eb;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-sm {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: #374151;
+  color: #d1d5db;
+}
+
+.status-running {
+  background: #2563eb;
+  color: #fff;
+}
+
+.status-completed {
+  background: #16a34a;
+  color: #fff;
+}
+
+.status-failed {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* ---------- 主区域 ---------- */
+.main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.scene-area {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: #f8f9fa;
+  border-left: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+/* ---------- Tab ---------- */
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.tabs button:hover {
+  color: #1d4ed8;
+}
+
+/* ---------- 面板 ---------- */
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px;
+  margin-bottom: 0;
+}
+
+.panel:last-child {
+  margin-bottom: 10px;
+}
+.resizer-v {
+  width: 4px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: #d1d5db;
+}
+
+.resizer-v:hover {
+  background: #2563eb;
+}
+
+.resizer-h {
+  height: 4px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background: #d1d5db;
+}
+
+.resizer-h:hover {
+  background: #2563eb;
+}
+
+/* ---------- 面板 ---------- */
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.panel-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.field label {
+  color: #4b5563;
+  font-size: 12px;
+}
+
+.field-input-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-input-area input,
+.field-input-area select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+/* ---------- 航点列表 ---------- */
+.wp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.wp-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.wp-index {
+  color: #6b7280;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.wp-coord {
+  font-family: 'Consolas', monospace;
+  flex: 1;
+}
+
+.wp-del {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.wp-empty {
+  color: #9ca3af;
+  justify-content: center;
+}
+
+/* ---------- 3D 场景 ---------- */
+.scene3d {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-container {
+  position: absolute;
+  inset: 0;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  color: #111827;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #d1d5db;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 模型列表 ---------- */
+.ml-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ml-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.ml-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.ml-name {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ml-bbox {
+  margin-left: auto;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ml-bbox-size {
+  font-family: 'Consolas', monospace;
+}
+
+.ml-del {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ml-empty {
+  color: #9ca3af;
+  justify-content: center;
+}
+
+/* ---------- 字段提示 ---------- */
+.field-hint {
+  font-size: 11px;
+  color: #dc2626;
+  margin: -4px 0 8px 0;
+  padding-left: 2px;
+}
+
+/* ---------- 仿真参数面板 ---------- */
+.section-divider {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin: 12px 0 8px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.field-range {
+  font-size: 10px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.field-note {
+  font-size: 10px;
+  color: #6b7280;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.input-readonly {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  font-size: 13px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ---------- 点云面板 ---------- */
+.pc-empty {
+  color: #9ca3af;
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ---------- 弓字形面板 ---------- */
+.bowtie-panel {
+  margin-bottom: 0;
+}
+
+.bowtie-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 6px 0 0;
+}
+
+/* ---------- 设置面板 ---------- */
+.settings-loading {
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.cache-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cache-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.cache-label {
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.cache-info {
+  flex: 1;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* ---------- 日志控制台 ---------- */
+.console {
+  height: 200px;
+  flex-shrink: 0;
+  margin: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-console {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.log-box {
+  flex: 1;
+  overflow-y: auto;
+  background: #0b1020;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-time {
+  color: #6b7280;
+  margin-right: 6px;
+}
+
+.log-level {
+  display: inline-block;
+  width: 62px;
+  font-weight: 600;
+}
+
+.log-info .log-level {
+  color: #60a5fa;
+}
+
+.log-warning .log-level {
+  color: #fbbf24;
+}
+
+.log-error .log-level {
+  color: #f87171;
+}
+
+.log-msg {
+  color: #e5e7eb;
+}
+
+.log-error .log-msg {
+  color: #fca5a5;
+}
+
+.log-empty {
+  color: #6b7280;
+}

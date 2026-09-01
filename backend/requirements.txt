@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.5
+python-multipart>=0.0.9
+aiofiles>=23.2
+laspy[lazrs]>=2.5
+numpy>=1.26
