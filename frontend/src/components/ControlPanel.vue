@@ -1,11 +1,18 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 import { useHeliosAPI } from '../composables/useHeliosAPI'
 import { getParams } from '../composables/scannerSpecs'
+import { useThreeScene } from '../composables/useThreeScene'
 
 const simStore = useSimulationStore()
 const api = useHeliosAPI()
+const three = useThreeScene()
+
+// 场景最高点（上次自动计算时的值），用于在面板中展示
+const sceneMaxZ = ref(null)
+// 安全余量（米）：建议航高 = 场景模型最高点 + 安全余量
+const SAFETY_MARGIN = 20
 
 const specs = computed(() => getParams(simStore.params.platform_type))
 
@@ -34,6 +41,28 @@ function onPlatformChange() {
       simStore.params[key] = spec.default
     }
   }
+}
+
+function autoAltitude() {
+  const maxZ = three.getSceneMaxZ()
+  if (maxZ === null) {
+    simStore.addLog('WARNING', '未加载模型，无法自动计算航高')
+    return
+  }
+  sceneMaxZ.value = maxZ
+
+  const spec = specs.value.platform.params.altitude
+  let recommended = Math.ceil((maxZ + SAFETY_MARGIN) * 10) / 10
+  if (recommended < spec.min) recommended = spec.min
+  if (recommended > spec.max) {
+    simStore.addLog('WARNING', `建议航高 ${recommended} m 超过上限 ${spec.max} m，已按上限设置`)
+    recommended = spec.max
+  }
+  simStore.params.altitude = recommended
+  simStore.addLog(
+    'INFO',
+    `自动计算航高：模型最高点 ${maxZ.toFixed(2)} m + 安全余量 ${SAFETY_MARGIN} m = ${recommended} m`
+  )
 }
 
 async function generateConfig() {
@@ -74,6 +103,17 @@ async function generateConfig() {
         <span class="field-range">有效范围：{{ spec.min }} ~ {{ spec.max }}</span>
       </div>
     </div>
+    <div class="field">
+      <label>建议航高</label>
+      <div class="field-input-area">
+        <button class="btn btn-sm" @click="autoAltitude">自动计算航高</button>
+        <span v-if="sceneMaxZ !== null" class="field-range">
+          模型最高点 {{ sceneMaxZ.toFixed(2) }} m → 建议 {{ simStore.params.altitude }} m
+        </span>
+        <span v-else class="field-range">基于场景模型最高点推荐安全飞行高度</span>
+      </div>
+    </div>
+
     <div v-if="altWarning" class="field-hint">{{ altWarning }}</div>
 
     <div class="section-divider">传感器参数 — {{ specs.scanner.label }}（{{ specs.scanner.type }}）</div>
