@@ -453,6 +453,17 @@ function createThreeScene() {
     })
   }
 
+  // 场景最高点（所有已加载模型的世界坐标系包围盒并集的最大 Z 值）。
+  // setFromObject 会应用模型的世界变换（含 Y-up → Z-up 旋转），因此结果与 HELIOS++ 高程一致。
+  function getSceneMaxZ() {
+    const box = new THREE.Box3()
+    const tmp = new THREE.Box3()
+    Object.values(state.modelRoots).forEach((root) => {
+      box.union(tmp.setFromObject(root))
+    })
+    return box.isEmpty() ? null : box.max.z
+  }
+
   function disposeObject(obj) {
     obj.traverse((o) => {
       if (o.geometry) o.geometry.dispose()
@@ -585,6 +596,7 @@ function createThreeScene() {
     setPointCloud, updatePointCloud, clearPointCloud,
     setWaypointCallbacks, renderWaypoints,
     setPickMode,
+    getSceneMaxZ,
     get scene() { return state.scene },
     get camera() { return state.camera },
   }

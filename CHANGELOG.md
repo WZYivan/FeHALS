@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- 航高自动计算：基于场景模型最高点 + 安全余量（20 m）推荐安全飞行高度（ControlPanel「建议航高」按钮 + useThreeScene.getSceneMaxZ）
+
 ## v0.1.0 (2026-09-02)
 
 ### Added
