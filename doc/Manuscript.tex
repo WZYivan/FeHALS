@@ -53,15 +53,15 @@
 \def\floatpagepagefraction{1}
 \def\textpagefraction{.001}
 
-\shortauthors{Wang et~al.}
+\shortauthors{7组（王孜悠）}
 \shorttitle{}
 \title [mode = title]{FeHALS：基于Web的3D可视化航路规划与激光仿真系统}
 
-\author[1]{王 孜悠}[style=chinese]
+\author[1]{王 孜悠}[style=chinese, orcid=2310604116]
 \ead{ziyouwang@njfu.edu.cn}
 \credit{文档编写, 思路构建, 代码实现, 功能验证}
 
-\author[1]{梅 康凯}[style=chinese]
+\author[1]{梅 康凯}[style=chinese, orcid=2310604109]
 \credit{暂无贡献}
 
 \author[1]{唐 如意}[style=chinese]
@@ -92,7 +92,7 @@
   country={China}}
 
 \begin{abstract}
-  三维激光扫描仿真技术在地理信息、遥感与测绘领域的应用日益广泛。HELIOS++作为一款开源的激光雷达仿真框架，能够高保真地模拟机载、地面与无人机等平台的扫描过程，但其原生交互方式依赖命令行与XML配置文件，缺乏直观的三维可视化航路规划能力，限制了其在复杂场景下的高效使用。本文提出并实现了一个基于Web的FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning）系统。系统采用浏览器/服务器（B/S）架构，前端基于Vue 3与Three.js构建三维交互场景，后端基于FastAPI提供仿真服务并封装HELIOS++引擎调用。系统支持导入多种三维模型，用户可在浏览器三维场景中通过鼠标交互设定航点并自动生成符合HELIOS++格式的航迹文件；同时提供图形化界面配置扫描平台与传感器参数，一键调用仿真引擎并通过WebSocket实时推送运行日志；仿真生成的点云可自动加载至三维场景，并支持按高度、强度着色以及点尺寸与透明度的调节。该系统有效降低了HELIOS++的使用门槛，为航摄方案设计、传感器参数优化及点云数据模拟提供了便捷、高效的可视化工具。本文详细阐述了系统的架构设计、核心功能模块与技术实现路径，并通过典型场景验证了系统的可行性与实用性。
+  三维激光扫描仿真技术在地理信息、遥感与测绘领域的应用日益广泛。HELIOS++作为一款开源的激光雷达仿真框架，能够高保真地模拟机载、地面与无人机等平台的扫描过程，但其原生交互方式依赖命令行与XML配置文件，缺乏直观的三维可视化航路规划能力，限制了其在复杂场景下的高效使用。本文提出并实现了一个基于Web的FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning）系统。系统采用浏览器/服务器（B/S）架构，前端基于Vue 3与Three.js构建三维交互场景，后端基于FastAPI提供仿真服务并封装HELIOS++引擎调用。系统支持导入多种三维模型，用户可在浏览器三维场景中通过鼠标交互设定航点并自动生成符合HELIOS++格式的航迹文件；同时提供图形化界面配置扫描平台与传感器参数，一键调用仿真引擎并通过WebSocket实时推送运行日志；仿真生成的点云可自动加载至三维场景，并支持按高度、强度着色以及点尺寸与透明度的调节。该系统有效降低了HELIOS++的使用门槛，为航摄方案设计、传感器参数优化及点云数据模拟提供了便捷、高效的可视化工具。本文详细阐述了系统的架构设计、核心功能模块与技术实现路径，并通过典型场景验证了系统的可行性与实用性。源代码已公开至\url{https://github.com/WZYivan/FeHALS}。
 \end{abstract}
 
 % \begin{graphicalabstract}
