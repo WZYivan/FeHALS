@@ -16,13 +16,20 @@ const sceneMaxZ = ref(null)
 // 安全余量（米）：建议航高 = 场景模型最高点 + 安全余量
 const SAFETY_MARGIN = 20
 
-// 模型集合变化（增/删）时清空上一次的建议结果，避免继续展示已卸载模型的历史高程
+const specs = computed(() => getParams(simStore.params.platform_type))
+
+// 模型集合变化（增/删）时，清空基于已卸载模型计算的建议航高（展示缓存 + 航高值），
+// 避免继续沿用历史模型的高程
 watch(
   () => sceneStore.models.map((m) => m.id),
-  () => { sceneMaxZ.value = null },
+  () => {
+    if (sceneMaxZ.value !== null) {
+      // 上次「建议航高」基于旧的模型集合，随增删失效，恢复平台默认航高
+      simStore.params.altitude = specs.value.platform.params.altitude.default
+    }
+    sceneMaxZ.value = null
+  },
 )
-
-const specs = computed(() => getParams(simStore.params.platform_type))
 
 const platformParams = computed(() => specs.value.platform.params)
 const scannerParams = computed(() => specs.value.scanner.params)
