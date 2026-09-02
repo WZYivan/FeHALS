@@ -2,6 +2,7 @@
 
 模型 / 航迹 / 配置 / 仿真 / 结果 / 缓存 六类资源。
 """
+import numpy as np
 import shutil
 import time
 import uuid
@@ -18,7 +19,7 @@ from app.services import (
     pointcloud_parser,
     trajectory_generator,
 )
-
+from ..services.coverage import CoverageAnalyzer
 router = APIRouter(prefix="/api")
 
 # 模型注册表：model_id -> {filename, path, url, ext}（单进程内有效）
@@ -273,3 +274,23 @@ async def clear_cache(cache_type: str):
             f.unlink()
             removed += 1
     return {"success": True, "type": cache_type, "removed": removed}
+# ==================== 点云覆盖度分析 ====================
+
+class CoverageRequest(BaseModel):
+    points: list  # [[x,y,z], ...]
+    grid_size: int = 50
+
+@router.post("/coverage/analyze")
+async def analyze_coverage(request: CoverageRequest):
+    """分析点云覆盖度"""
+    try:
+        # 转换数据
+        points = np.array(request.points)
+        
+        # 分析
+        analyzer = CoverageAnalyzer(grid_size=request.grid_size)
+        result = analyzer.analyze(points)
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,0 +1,259 @@
+<template>
+  <div class="coverage-panel">
+    <div class="coverage-header">
+      <h3>点云覆盖度分析</h3>
+      <button @click="analyze" :disabled="isAnalyzing" class="analyze-btn">
+        {{ isAnalyzing ? '分析中...' : '运行分析' }}
+      </button>
+    </div>
+    
+    <div v-if="coverageData" class="coverage-stats">
+      <div class="stat-item">
+        <span class="stat-label">总点数</span>
+        <span class="stat-value">{{ coverageData.statistics.total_points.toLocaleString() }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">最大密度</span>
+        <span class="stat-value">{{ coverageData.statistics.max_density }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">平均密度</span>
+        <span class="stat-value">{{ coverageData.statistics.mean_density.toFixed(2) }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">覆盖度</span>
+        <span class="stat-value">{{ coverageData.statistics.coverage_percentage.toFixed(1) }}%</span>
+      </div>
+    </div>
+    
+    <div v-if="coverageData" class="heatmap-container">
+      <canvas ref="heatmapCanvas" class="heatmap-canvas"></canvas>
+      <div class="heatmap-legend">
+        <div class="legend-gradient"></div>
+        <div class="legend-labels">
+          <span>低</span>
+          <span>高</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, nextTick } from 'vue'
+
+const coverageData = ref(null)
+const isAnalyzing = ref(false)
+const heatmapCanvas = ref(null)
+
+// 获取点云数据（需要根据你的项目结构调整）
+const getPointCloudData = () => {
+  // 这里需要从你的store或全局状态中获取点云数据
+  // 示例：从window对象获取（你需要替换成实际的store）
+  if (window.__pointCloudData) {
+    return window.__pointCloudData
+  }
+  
+  // 或者从localStorage获取
+  const cached = localStorage.getItem('pointCloudData')
+  if (cached) {
+    return JSON.parse(cached)
+  }
+  
+  return null
+}
+
+const analyze = async () => {
+  const points = getPointCloudData()
+  if (!points || points.length === 0) {
+    alert('请先加载点云数据')
+    return
+  }
+  
+  isAnalyzing.value = true
+  try {
+    const response = await fetch('/api/coverage/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        points: points,
+        grid_size: 50
+      })
+    })
+    
+    coverageData.value = await response.json()
+    
+    await nextTick()
+    renderHeatmap(coverageData.value)
+  } catch (error) {
+    console.error('覆盖度分析失败:', error)
+    alert('分析失败，请查看控制台错误信息')
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
+const renderHeatmap = (data) => {
+  const canvas = heatmapCanvas.value
+  if (!canvas) return
+  
+  const ctx = canvas.getContext('2d')
+  const grid = data.grid
+  const size = grid.length
+  
+  canvas.width = 400
+  canvas.height = 400
+  
+  const cellSize = canvas.width / size
+  
+  // 找到最大密度用于归一化
+  let maxDensity = 0
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j < size; j++) {
+      if (grid[i][j] > maxDensity) maxDensity = grid[i][j]
+    }
+  }
+  
+  // 绘制热力图
+  const imageData = ctx.createImageData(canvas.width, canvas.height)
+  const dataArray = imageData.data
+  
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j < size; j++) {
+      const density = grid[i][j]
+      const normalized = maxDensity > 0 ? density / maxDensity : 0
+      
+      // 获取颜色
+      let r, g, b
+      if (normalized === 0) {
+        r = g = b = 0
+      } else if (normalized < 0.5) {
+        const t = normalized / 0.5
+        r = 0
+        g = Math.round(255 * t)
+        b = 255
+      } else {
+        const t = (normalized - 0.5) / 0.5
+        r = Math.round(255 * t)
+        g = Math.round(255 * (1 - t))
+        b = 0
+      }
+      
+      // 填充像素
+      const startX = Math.round(i * cellSize)
+      const startY = Math.round(j * cellSize)
+      
+      for (let dy = 0; dy < cellSize && startY + dy < canvas.height; dy++) {
+        for (let dx = 0; dx < cellSize && startX + dx < canvas.width; dx++) {
+          const idx = ((startY + dy) * canvas.width + (startX + dx)) * 4
+          dataArray[idx] = r
+          dataArray[idx + 1] = g
+          dataArray[idx + 2] = b
+          dataArray[idx + 3] = density > 0 ? 200 : 0
+        }
+      }
+    }
+  }
+  
+  ctx.putImageData(imageData, 0, 0)
+}
+</script>
+
+<style scoped>
+.coverage-panel {
+  background: rgba(30, 30, 40, 0.95);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 10px 0;
+}
+
+.coverage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coverage-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+}
+
+.analyze-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.analyze-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+.coverage-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-label {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.stat-value {
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.heatmap-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.heatmap-canvas {
+  width: 200px;
+  height: 200px;
+  border-radius: 4px;
+  border: 1px solid #444;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-gradient {
+  width: 20px;
+  height: 150px;
+  background: linear-gradient(to top, #0000ff, #00ffff, #ffff00, #ff0000);
+  border-radius: 2px;
+}
+
+.legend-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 150px;
+  font-size: 10px;
+  color: #aaa;
+}
+</style>

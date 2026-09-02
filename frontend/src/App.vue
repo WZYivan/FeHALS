@@ -15,6 +15,7 @@ import ModelList from './components/ModelList.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import LogConsole from './components/LogConsole.vue'
 
+
 const sceneStore = useSceneStore()
 const waypointStore = useWaypointStore()
 const simStore = useSimulationStore()
@@ -228,27 +229,28 @@ async function loadResult() {
 
 <template>
   <div class="app">
-    <header class="toolbar">
-      <span class="brand">FeHALS</span>
-      <span class="brand-sub">3D 可视化航路规划与激光仿真</span>
-      <div class="toolbar-actions">
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".obj,.gltf,.glb,.stl"
-          style="display: none"
-          @change="onFileChange"
-        />
-        <button class="btn" @click="onPickModel">模型上传</button>
-        <button class="btn" @click="exportTrajectory">导出航迹</button>
-        <button class="btn btn-primary" @click="runSimulation" v-if="simStore.status !== 'running'">执行仿真</button>
-        <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
-        <span class="status-badge" :class="'status-' + simStore.status">
-          {{ statusText[simStore.status] || simStore.status }}
-          <template v-if="simStore.status === 'running'"> {{ simStore.progress }}%</template>
-        </span>
-      </div>
-    </header>
+      <header class="toolbar">
+          <span class="brand">FeHALS</span>
+          <span class="brand-sub">3D 可视化航路规划与激光仿真</span>
+          <CoverageHeatmap />
+          <div class="toolbar-actions">
+              <input ref="fileInput"
+                     type="file"
+                     accept=".obj,.gltf,.glb,.stl"
+                     style="display: none"
+                     @change="onFileChange" />
+              <button class="btn" @click="onPickModel">模型上传</button>
+              <button class="btn" @click="exportTrajectory">导出航迹</button>
+              <button class="btn btn-primary" @click="runSimulation" v-if="simStore.status !== 'running'">执行仿真</button>
+              <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
+              <span class="status-badge" :class="'status-' + simStore.status">
+                  {{ statusText[simStore.status] || simStore.status }}
+                  <template v-if="simStore.status === 'running'">
+                      {{ simStore.progress }}%
+                  </template>
+              </span>
+          </div>
+      </header>
 
     <div class="main">
       <div class="scene-area">
