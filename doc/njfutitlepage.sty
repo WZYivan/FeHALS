@@ -1,0 +1,215 @@
+% ===========================================================================
+%  njfutitlepage.sty — 南京林业大学 (NJFU) 封面宏包
+%  版本: 1.0  |  日期: 2026/09/02
+%  许可: LPPL
+% ===========================================================================
+%
+%  概述
+%  ----
+%  本宏包为 LaTeX 文档生成南京林业大学标准封面页。用户通过一组信息录入
+%  命令设置各字段，再由 \MakeNJFUTitlePage 统一渲染。
+%
+%  快速示例
+%  --------
+%    \usepackage{njfutitlepage}
+%    \Title{报告标题}
+%    \Course{数据结构}
+%    \Member[20230101]{张三}
+%    \Teacher{赵教授}
+%    \MakeNJFUTitlePage            % 使用 \Title{} 的标题
+%    \MakeNJFUTitlePage[UseDocTitle] % 使用 \title{} 的标题
+%
+%  必需文件
+%  --------
+%    njfutitlepage.sty  — 本宏包
+%    NJFULogo.pdf       — 校徽图片（默认路径，可通过 \NJFULogo{} 更改）
+%
+%  \Member 与 \Teacher 均不会修改 \author。
+% ===========================================================================
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{njfutitlepage}[2026/09/02 v1.0 NJFU Title Page]
+
+% ---------------------------------------------------------------------------
+%  依赖宏包
+% ---------------------------------------------------------------------------
+\RequirePackage{ctex}      % 中文排版支持（必须使用 XeLaTeX / LuaLaTeX）
+\RequirePackage{graphicx}  % \includegraphics — 校徽图片
+\RequirePackage{xparse}    % \NewDocumentCommand — 定义 \MakeNJFUTitlePage
+\RequirePackage{xstring}   % \IfStrEq — 判断可选参数是否为 UseDocTitle
+\RequirePackage{etoolbox}  % \ifblank — 判断 \Member 可选学号是否为空
+
+% ---------------------------------------------------------------------------
+%  内部工具命令
+% ---------------------------------------------------------------------------
+
+% \njfu@underlinefill{text}
+%   渲染固定宽度 (6cm) 的下划线填充框，文本居中显示于下划线内。
+%   用于所有信息字段（课程、专业、小组、年级、成员姓名/学号、教师、日期）。
+\newcommand{\njfu@underlinefill}[1]{%
+  \underline{\makebox[6cm][c]{#1}}%
+}
+
+% ---------------------------------------------------------------------------
+%  信息存储宏与用户命令
+% ---------------------------------------------------------------------------
+
+% --- 单值字段 ---
+%   每个命令接受一个参数，存入对应的 \njfu@ 内部宏。
+%   渲染时由 \MakeNJFUTitlePage 读取并格式化输出。
+
+\newcommand{\Course}[1]{\def\njfu@course{#1}}       % 课程名称
+\newcommand{\Major}[1]{\def\njfu@major{#1}}         % 专业
+\newcommand{\Group}[1]{\def\njfu@group{#1}}         % 组别
+\newcommand{\Grade}[1]{\def\njfu@grade{#1}}         % 年级
+\def\njfu@reviewdate{}
+\newcommand{\ReviewDate}[1]{\def\njfu@reviewdate{#1}} % 批改/评审日期
+\def\njfu@submitdate{\today}
+\newcommand{\SubmitDate}[1]{\def\njfu@submitdate{#1}} % 提交日期
+\newcommand{\Title}[1]{\def\njfu@title{#1}}         % 封面标题（包管理）
+
+% ---------------------------------------------------------------------------
+%  可自定义标签
+% ---------------------------------------------------------------------------
+%   用户可通过 \renewcommand 修改各字段的标签文本，
+%   例如: \renewcommand{\GroupLabel}{班组}
+
+\newcommand{\CourseLabel}{课程名称}
+\newcommand{\MemberLabel}{小组成员}
+\newcommand{\TeacherLabel}{指导老师}
+\newcommand{\MajorLabel}{专业}
+\newcommand{\GroupLabel}{组别}
+\newcommand{\GradeLabel}{年级}
+\newcommand{\ReviewDateLabel}{批改日期}
+\newcommand{\SubmitDateLabel}{提交日期}
+
+% ---------------------------------------------------------------------------
+%  校徽路径
+% ---------------------------------------------------------------------------
+%   默认为 NJFULogo.pdf（与 .tex 主文件同目录）。
+%   用户可通过 \NJFULogo{路径} 更改，例如: \NJFULogo{img/mylogo.pdf}
+
+\def\njfu@logopath{NJFULogo.pdf}
+\newcommand{\NJFULogo}[1]{\def\njfu@logopath{#1}}
+
+% --- \Member[code]{name} — 小组成员 ---
+%   [code]  可选学号，默认为空
+%   {name}  必需姓名
+%
+%   姓名与学号均使用 \njfu@underlinefill 渲染下划线。
+%   若学号为空，仅显示姓名下划线。
+%   每名成员独占一行，缩进至与"小组成员："右侧对齐。
+%
+%   内部存储:
+%     \njfu@members       — 累积的全部成员行
+%     \njfu@memberindent  — \phantom 对齐缩进（宽度 = "小组成员："标签）
+%     \njfu@memberentry   — 单条成员行的内容（不含缩进和 \par）
+
+\newcommand{\njfu@members}{}
+\newcommand{\njfu@memberentry}[2]{%
+  \ifblank{#1}{%
+    % 无学号：仅显示姓名
+    \njfu@underlinefill{#2}%
+  }{%
+    % 有学号：姓名 \qquad 学号
+    \njfu@underlinefill{#2\qquad#1}%
+  }%
+}
+\newcommand{\njfu@memberindent}{\phantom{\large\textbf{\MemberLabel}：}}
+\newcommand{\Member}[2][]{%
+  \ifx\njfu@members\@empty
+    % 首位成员：紧跟"小组成员："标签，无需缩进
+    \g@addto@macro\njfu@members{\njfu@memberentry{#1}{#2}\par}%
+  \else
+    % 后续成员：添加缩进以与标签右侧对齐
+    \g@addto@macro\njfu@members{\njfu@memberindent\njfu@memberentry{#1}{#2}\par}%
+  \fi
+}
+
+% --- \Teacher{name} — 指导教师 ---
+%   所有教师共用一行，以 \quad 间隔。
+%   内部存储于 \njfu@teachers，渲染时填入 \njfu@underlinefill。
+
+\newcommand{\njfu@teachers}{}
+\newcommand{\Teacher}[1]{%
+  \ifx\njfu@teachers\@empty
+    \gdef\njfu@teachers{#1}%           % 首位教师
+  \else
+    \g@addto@macro\njfu@teachers{\quad #1}% % 后续教师，\quad 间隔
+  \fi
+}
+
+% ---------------------------------------------------------------------------
+%  \MakeNJFUTitlePage[UseDocTitle]
+% ---------------------------------------------------------------------------
+%   渲染完整封面页。在 titlepage 环境中依次输出:
+%     1. 校徽 (0.8\textwidth)
+%     2. 标题 (\huge\bfseries)
+%     3. 信息字段（课程、专业、组别、年级）
+%     4. 小组成员列表
+%     5. 指导教师
+%     6. 批改日期、提交日期
+%
+%   可选参数:
+%     省略           → 使用 \Title{} 设置的标题
+%     [UseDocTitle]  → 使用文档 \title{} 设置的标题 (\@title)
+%     [其他文本]     → 直接使用该文本作为标题
+% ---------------------------------------------------------------------------
+
+\NewDocumentCommand{\MakeNJFUTitlePage}{o}{%
+  \begin{titlepage}%
+    \centering
+
+    %--- 校徽 ---
+    \includegraphics[width=0.8\textwidth]{\njfu@logopath}\par
+    \vspace{2cm}%
+
+    %--- 标题 ---
+    {%
+      \IfValueTF{#1}{%
+        % 可选参数已给出
+        \IfStrEq{#1}{UseDocTitle}{%
+          \huge\bfseries\@title\par       % 使用文档 \title{}
+        }{%
+          \huge\bfseries#1\par            % 使用自定义文本
+        }%
+      }{%
+        % 无可选参数：使用 \Title{} 设置的标题
+        \huge\bfseries\njfu@title\par
+      }%
+    }%
+    \vspace{1cm}%
+
+    %--- 单行信息字段 ---
+    {\large \textbf{\CourseLabel}：\njfu@underlinefill{\njfu@course}\par}%
+    \vspace{0.5cm}%
+    {\large \textbf{\MajorLabel}：\njfu@underlinefill{\njfu@major}\par}%
+    \vspace{0.5cm}%
+    {\large \textbf{\GroupLabel}：\njfu@underlinefill{\njfu@group}\par}%
+    \vspace{0.5cm}%
+    {\large \textbf{\GradeLabel}：\njfu@underlinefill{\njfu@grade}\par}%
+    \vspace{0.5cm}%
+
+    %--- 小组成员 ---
+    %   使用 minipage 以确保 \phantom 缩进对齐生效。
+    %   首位成员紧跟标签，后续成员缩进至标签右侧。
+    \begin{minipage}[t]{1.0\textwidth}%
+      \centering
+      {\large \textbf{\MemberLabel}：\njfu@members\par}%
+    \end{minipage}%
+    \vspace{0.3cm}%
+
+    %--- 指导教师 ---
+    {\large \textbf{\TeacherLabel}：\njfu@underlinefill{\njfu@teachers}\par}%
+    \vspace{0.5cm}%
+
+    %--- 日期字段 ---
+    {\large \textbf{\ReviewDateLabel}：\njfu@underlinefill{\njfu@reviewdate}\par}%
+    \vspace{0.5cm}%
+    {\large \textbf{\SubmitDateLabel}：\njfu@underlinefill{\njfu@submitdate}\par}%
+    \vspace{1cm}%
+
+  \end{titlepage}%
+}
+
+\endinput

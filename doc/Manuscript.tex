@@ -19,7 +19,7 @@
 
 %\documentclass[a4paper,fleqn,longmktitle]{cas-sc}
 \documentclass[a4paper,fleqn]{cas-sc}
-
+\usepackage{njfutitlepage}
 % \usepackage[numbers]{natbib}
 \usepackage[authoryear]{natbib}
 % \usepackage[authoryear,longnamesfirst]{natbib}
@@ -28,15 +28,15 @@
 \usepackage[ruled,vlined]{algorithm2e}
 \usepackage{etoolbox}
 
-\newcounter{stage}
-\setcounter{stage}{0}
-\newcommand{\Stage}[1]{%
-  \stepcounter{stage}%
-  \vspace{0.3em}%
-  \textbf{\textit{\footnotesize\arabic{stage}. #1:\\}}%
-  \vspace{0.2em}%
-}
-\AtEndEnvironment{algorithm}{\setcounter{stage}{0}}
+% \newcounter{stage}
+% \setcounter{stage}{0}
+% \newcommand{\Stage}[1]{%
+%   \stepcounter{stage}%
+%   \vspace{0.3em}%
+%   \textbf{\textit{\footnotesize\arabic{stage}. #1:\\}}%
+%   \vspace{0.2em}%
+% }
+% \AtEndEnvironment{algorithm}{\setcounter{stage}{0}}
 
 %%%Author definitions
 \def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
@@ -56,6 +56,26 @@
 \shortauthors{7组（王孜悠）}
 \shorttitle{}
 \title [mode = title]{FeHALS：基于Web的3D可视化航路规划与激光仿真系统}
+
+\Course{GIS设计与开发}
+\Major{测绘工程}
+\Grade{2023级}
+\Group{7 组}
+
+\Member[2310604116]{王 孜悠}
+\Member[2310604109]{梅 康凯}
+\Member[]{唐 如意}
+\Member[]{温 璞}
+\Member[]{刘 继明}
+\Member[]{李 英杰}
+\Member[]{杜 仲宇}
+\Member[]{施 祺}
+\Member[]{向 宇鸣}
+
+\Teacher{隋 铭明}
+\Teacher{那 嘉明}
+\Teacher{陈 动}
+\Teacher{朱 杰}
 
 \author[1]{王 孜悠}[style=chinese, orcid=2310604116]
 \ead{ziyouwang@njfu.edu.cn}
@@ -111,7 +131,7 @@
   ALS \sep 航路规划 \sep 三维可视化 \sep B/S架构 \sep HELIOS++
 \end{keywords}
 
-
+\MakeNJFUTitlePage[UseDocTitle]
 \maketitle
 \tableofcontents
 \hrulefill
