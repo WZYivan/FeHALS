@@ -5,6 +5,9 @@
 ### Added
 - 航高自动计算：基于场景模型最高点 + 安全余量（20 m）推荐安全飞行高度（ControlPanel「建议航高」按钮 + useThreeScene.getSceneMaxZ）
 
+### Fixed
+- 修复航高自动计算在增删模型后仍显示上一次结果的 bug：模型列表变化时清空建议航高
+
 ## v0.1.0 (2026-09-02)
 
 ### Added

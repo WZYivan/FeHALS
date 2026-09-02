@@ -1,11 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
+import { useSceneStore } from '../stores/scene'
 import { useHeliosAPI } from '../composables/useHeliosAPI'
 import { getParams } from '../composables/scannerSpecs'
 import { useThreeScene } from '../composables/useThreeScene'
 
 const simStore = useSimulationStore()
+const sceneStore = useSceneStore()
 const api = useHeliosAPI()
 const three = useThreeScene()
 
@@ -13,6 +15,12 @@ const three = useThreeScene()
 const sceneMaxZ = ref(null)
 // 安全余量（米）：建议航高 = 场景模型最高点 + 安全余量
 const SAFETY_MARGIN = 20
+
+// 模型集合变化（增/删）时清空上一次的建议结果，避免继续展示已卸载模型的历史高程
+watch(
+  () => sceneStore.models.map((m) => m.id),
+  () => { sceneMaxZ.value = null },
+)
 
 const specs = computed(() => getParams(simStore.params.platform_type))
 
