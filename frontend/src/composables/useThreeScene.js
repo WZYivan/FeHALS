@@ -27,6 +27,7 @@ function createThreeScene() {
     waypointGroup: null,
     waypointLine: null,
     modelRoots: {}, // id -> THREE.Object3D
+    pendingRemoval: new Set(), // 加载期间被删除的模型 id（丢弃竞态的幽灵对象）
     bboxHelpers: {}, // id -> THREE.Box3Helper
     modelMeshes: [], // 参与拾取的模型 Mesh（通过 refreshModelMeshes 重建）
     waypointSpheres: [], // [{mesh, index}]
@@ -330,6 +331,7 @@ function createThreeScene() {
 
   function loadModel(url, name, up = 'z', id) {
     return new Promise((resolve, reject) => {
+      if (id) state.pendingRemoval.delete(id) // 新一次加载前清除旧的删除标记
       const ext = (name.split('.').pop() || '').toLowerCase()
       let loader
       if (ext === 'obj') loader = new OBJLoader()
@@ -354,6 +356,13 @@ function createThreeScene() {
           root.rotation.x = Math.PI / 2
         }
 
+        // 加载期间模型已被删除：丢弃结果，避免产生幽灵对象
+        if (id && state.pendingRemoval.has(id)) {
+          disposeObject(root)
+          reject(new Error('模型已删除，加载已取消'))
+          return
+        }
+
         state.modelsGroup.add(root)
         if (id) state.modelRoots[id] = root
         refreshModelMeshes()
@@ -371,6 +380,7 @@ function createThreeScene() {
   }
 
   function removeModel(id) {
+    state.pendingRemoval.add(id) // 标记：若有进行中的加载，完成后丢弃该模型
     const root = state.modelRoots[id]
     if (!root) return
     state.modelsGroup.remove(root)
@@ -451,6 +461,17 @@ function createThreeScene() {
     Object.values(state.modelRoots).forEach((root) => {
       root.traverse((o) => { if (o.isMesh) state.modelMeshes.push(o) })
     })
+  }
+
+  // 场景最高点（所有已加载模型的世界坐标系包围盒并集的最大 Z 值）。
+  // setFromObject 会应用模型的世界变换（含 Y-up → Z-up 旋转），因此结果与 HELIOS++ 高程一致。
+  function getSceneMaxZ() {
+    const box = new THREE.Box3()
+    const tmp = new THREE.Box3()
+    Object.values(state.modelRoots).forEach((root) => {
+      box.union(tmp.setFromObject(root))
+    })
+    return box.isEmpty() ? null : box.max.z
   }
 
   function disposeObject(obj) {
@@ -585,6 +606,7 @@ function createThreeScene() {
     setPointCloud, updatePointCloud, clearPointCloud,
     setWaypointCallbacks, renderWaypoints,
     setPickMode,
+    getSceneMaxZ,
     get scene() { return state.scene },
     get camera() { return state.camera },
   }
