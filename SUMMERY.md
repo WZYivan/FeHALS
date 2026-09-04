@@ -19,3 +19,18 @@
 文档方面，我为 [Elsevier CAS Bundle](doc/Manuscript.tex) 添加了 [南京林业大学风格的封面](doc/njfutitlepage.sty) ，修正了一些引用方面的位置错误。并预计为文档添加合适的 `Graphic Abstract` 、图片等内容以丰富文档内容。
 
 除了梅康凯与唐如意二人，尚未有其他人询问代码贡献事宜，即使我已经在合作群中发布公告。
+
+## 2026-09-03
+
+在`2026-09-01`的基本开发完成之后，后续功能的开发工作已整理成列表在 [TODO](TODO.md) 中以指导各个成员选择合适的路径开发与贡献代码，本人将此后的精力集中于文档、图表的整理和项目的管理统筹。
+
+文档方面，主要是 [说明文档](doc/Manuscript.tex)，包含了相关技术、需求分析、系统架构、设计实现、未来展望等内容。这些暂时都是由我负责。目前仅仅填充了内容但还尚未优化，整体较为粗糙，也严重缺乏图、表等直观的说明性内容。这些都有待进一步优化。
+
+项目管理方面，统一使用 `git` 进行版本控制、 [github](www.github.com) 进行合作开发。以我的repo [FeHALS](https://github.com/WZYivan/FeHALS) 为父仓库，所有组员通过 `fork` 复制一份独立的repo进行开发，然后通过 `pull request` 操作请求审阅。在我（`CODEOWNER`）审阅之后即可 `merge` 到主分支。这样所有的操作历史、作者、来源清晰可查，组员的开发也不会互相干扰。同时，这还保持了主分支的纯洁与安全性，保证只有审阅过的安全、有效的代码才会进入仓库。
+
+今日合并了多个PR，分别来自梅康凯、唐如意和杨杰瑞三人：
+- 梅康凯：添加了自动航高计算、Windows系统启动脚本、修复了模型列表的相关的一些BUG。
+- 唐如意：添加了实时点云信息统计、增强了系统解析大点云文件的性能。
+- 杨杰瑞：绘制了 [系统架构图](doc/figs/src/detialed_fehals_arch.drawio) 、[数据流向图](doc/figs/src/detialed_fehals_workflow.drawio)、 [图概](doc/figs/src/graphicalabstract.drawio)。
+
+> 本人的开发环境是 `WSL` ，属于Linux系统，因此最初没有Windows系统的适配。

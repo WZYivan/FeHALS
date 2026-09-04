@@ -1,0 +1,70 @@
+<mxfile host="65bd71144e">
+    <diagram id="fehals" name="架构图">
+        <mxGraphModel dx="903" dy="573" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="FeHALS 系统架构" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="25" width="1320" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="front" value="前端层&lt;br&gt;Vue 3 + Three.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2F6FED;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=19;spacing=8;fontColor=#FFFFFF;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="110" width="170" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="f1" value="三维场景与航路&lt;br&gt;模型加载 · 航点编辑 · 点云渲染" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="135" width="240" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="f2" value="参数与任务控制&lt;br&gt;平台/传感器配置 · 校验 · 启动/取消" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="525" y="135" width="240" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="f3" value="状态管理&lt;br&gt;Pinia · 模型 · 航点 · 任务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="135" width="240" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="f4" value="结果与日志&lt;br&gt;实时日志 · 进度 · 下载 · 渲染设置" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1055" y="135" width="270" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="bus" value="HTTP / REST 请求     ·     WebSocket 日志与进度推送" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#17324D;strokeColor=#17324D;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontColor=#FFFFFF;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="370" width="650" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="back" value="后端层&lt;br&gt;FastAPI + Python" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1FA7B5;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=19;spacing=8;fontColor=#FFFFFF;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="485" width="170" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="b1" value="API 接入&lt;br&gt;REST 路由 · WebSocket 端点" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="260" y="515" width="240" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="b2" value="文件生成&lt;br&gt;Trajectory.trj · Survey / Scene XML" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="525" y="515" width="240" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="b3" value="仿真调度&lt;br&gt;参数校验 · 子进程 · 日志 · 任务状态" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="515" width="240" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="b4" value="结果服务&lt;br&gt;XYZ / LAS 解析 · 降采样 · 下载" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=16;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1055" y="515" width="270" height="145" as="geometry"/>
+                </mxCell>
+                <mxCell id="engine" value="仿真引擎层 · HELIOS++&lt;br&gt;光线追踪与扫描模拟  |  输入：XML / TRJ / Assets  |  输出：点云 / 日志" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DC;strokeColor=#D99020;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=18;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="755" width="1050" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="f2" target="bus" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="bus" target="b1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="b1" target="b2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="b2" target="b3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="b3" target="b4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="b3" target="engine" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#29966F;strokeWidth=2;dashed=1;endArrow=block;endFill=1;" parent="1" source="engine" target="b4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

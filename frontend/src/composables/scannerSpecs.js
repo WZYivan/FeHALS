@@ -35,6 +35,8 @@ export const SCANNER_SPECS = {
       pulse_freq: { label: '脉冲频率', unit: 'kHz', min: 50, max: 550, step: 10, default: 50.0, note: '50,100,200,300,380,550kHz' },
       beamDivergence: { label: '光束发散角', unit: 'mrad', min: 0.1, max: 2.0, step: 0.1, default: 0.5, readonly: true },
       rangeMin: { label: '最小测程', unit: 'm', default: 3, readonly: true },
+      // HELIOS++ scanners_als.xml 中 riegl_vux-1uav 未声明 rangeMax_m，运行时解析为 DBL_MAX（无测程上限）
+      rangeMax: { label: '最大测程', unit: 'm', default: null, readonly: true, note: 'HELIOS++ 未声明，视为无上限' },
     },
   },
   Airborne: {
@@ -48,6 +50,8 @@ export const SCANNER_SPECS = {
       pulse_freq: { label: '脉冲频率', unit: 'kHz', min: 50, max: 550, step: 10, default: 100.0, note: '50,100,200,300,380,550kHz' },
       beamDivergence: { label: '光束发散角', unit: 'mrad', min: 0.1, max: 2.0, step: 0.1, default: 0.5, readonly: true },
       rangeMin: { label: '最小测程', unit: 'm', default: 3, readonly: true },
+      // HELIOS++ scanners_als.xml 中 riegl_vux-1uav 未声明 rangeMax_m，运行时解析为 DBL_MAX（无测程上限）
+      rangeMax: { label: '最大测程', unit: 'm', default: null, readonly: true, note: 'HELIOS++ 未声明，视为无上限' },
     },
   },
 }

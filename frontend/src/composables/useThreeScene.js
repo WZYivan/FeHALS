@@ -4,6 +4,22 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 
+// 高度着色渐变（蓝→青→绿→黄→红）
+// 3D 点云着色（本文件）与统计直方图（PointCloudPanel）共用
+export function heightColor(t) {
+  const stops = [[0,0,1],[0,1,1],[0,1,0],[1,1,0],[1,0,0]]
+  const x = Math.max(0, Math.min(1, t)) * (stops.length - 1)
+  const i = Math.min(Math.floor(x), stops.length - 2)
+  const f = x - i
+  const a = stops[i], b = stops[i + 1]
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f]
+}
+
+export function heightCssColor(t) {
+  const [r, g, b] = heightColor(t)
+  return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`
+}
+
 // 单例场景管理器：负责 Three.js 场景、模型加载、点云渲染与航点交互。
 let singleton = null
 
@@ -27,6 +43,7 @@ function createThreeScene() {
     waypointGroup: null,
     waypointLine: null,
     modelRoots: {}, // id -> THREE.Object3D
+    pendingRemoval: new Set(), // 加载期间被删除的模型 id（丢弃竞态的幽灵对象）
     bboxHelpers: {}, // id -> THREE.Box3Helper
     modelMeshes: [], // 参与拾取的模型 Mesh（通过 refreshModelMeshes 重建）
     waypointSpheres: [], // [{mesh, index}]
@@ -330,6 +347,7 @@ function createThreeScene() {
 
   function loadModel(url, name, up = 'z', id) {
     return new Promise((resolve, reject) => {
+      if (id) state.pendingRemoval.delete(id) // 新一次加载前清除旧的删除标记
       const ext = (name.split('.').pop() || '').toLowerCase()
       let loader
       if (ext === 'obj') loader = new OBJLoader()
@@ -354,6 +372,13 @@ function createThreeScene() {
           root.rotation.x = Math.PI / 2
         }
 
+        // 加载期间模型已被删除：丢弃结果，避免产生幽灵对象
+        if (id && state.pendingRemoval.has(id)) {
+          disposeObject(root)
+          reject(new Error('模型已删除，加载已取消'))
+          return
+        }
+
         state.modelsGroup.add(root)
         if (id) state.modelRoots[id] = root
         refreshModelMeshes()
@@ -371,13 +396,14 @@ function createThreeScene() {
   }
 
   function removeModel(id) {
+    state.pendingRemoval.add(id) // 标记：若有进行中的加载，完成后丢弃该模型
     const root = state.modelRoots[id]
     if (!root) return
     state.modelsGroup.remove(root)
     disposeObject(root)
     delete state.modelRoots[id]
     // 清除 bbox + label
-    [id, id + '_label'].forEach((k) => {
+    ;[id, id + '_label'].forEach((k) => {
       const h = state.bboxHelpers[k]
       if (h) { state.scene.remove(h); delete state.bboxHelpers[k] }
     })
@@ -451,6 +477,17 @@ function createThreeScene() {
     Object.values(state.modelRoots).forEach((root) => {
       root.traverse((o) => { if (o.isMesh) state.modelMeshes.push(o) })
     })
+  }
+
+  // 场景最高点（所有已加载模型的世界坐标系包围盒并集的最大 Z 值）。
+  // setFromObject 会应用模型的世界变换（含 Y-up → Z-up 旋转），因此结果与 HELIOS++ 高程一致。
+  function getSceneMaxZ() {
+    const box = new THREE.Box3()
+    const tmp = new THREE.Box3()
+    Object.values(state.modelRoots).forEach((root) => {
+      box.union(tmp.setFromObject(root))
+    })
+    return box.isEmpty() ? null : box.max.z
   }
 
   function disposeObject(obj) {
@@ -569,15 +606,6 @@ function createThreeScene() {
     return colors
   }
 
-  function heightColor(t) {
-    const stops = [[0,0,1],[0,1,1],[0,1,0],[1,1,0],[1,0,0]]
-    const x = Math.max(0, Math.min(1, t)) * (stops.length - 1)
-    const i = Math.min(Math.floor(x), stops.length - 2)
-    const f = x - i
-    const a = stops[i], b = stops[i + 1]
-    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f]
-  }
-
   return {
     init, dispose,
     loadModel, removeModel, clearModels,
@@ -585,6 +613,7 @@ function createThreeScene() {
     setPointCloud, updatePointCloud, clearPointCloud,
     setWaypointCallbacks, renderWaypoints,
     setPickMode,
+    getSceneMaxZ,
     get scene() { return state.scene },
     get camera() { return state.camera },
   }

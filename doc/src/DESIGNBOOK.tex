@@ -1,0 +1,81 @@
+%%
+%% Copyright 2019-2020 Elsevier Ltd
+%%
+%% This file is part of the 'CAS Bundle'.
+%% --------------------------------------
+%%
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%%
+%% The list of all files belonging to the 'CAS Bundle' is
+%% given in the file `manifest.txt'.
+%%
+%% Template article for cas-sc documentclass for
+%% double column output.
+
+%\documentclass[a4paper,fleqn,longmktitle]{cas-sc}
+\documentclass[a4paper,fleqn]{cas-sc}
+\usepackage{njfutitlepage}
+% \usepackage[numbers]{natbib}
+\usepackage[authoryear]{natbib}
+% \usepackage[authoryear,longnamesfirst]{natbib}
+\usepackage{csquotes}
+\usepackage[UTF8]{ctex}
+\usepackage{gbt7714}
+\usepackage{makecell}
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+\shortauthors{7组（王孜悠）}
+\shorttitle{}
+\title [mode = title]{\makecell[c]{FeHALS：基于Web的3D可视化航路规划与激光仿真系统\\\textbf{技术设计书}}}
+
+\Course{GIS设计与开发}
+\Major{测绘工程}
+\Grade{2023级}
+\Group{7 组}
+
+\Member[2310604116]{王 孜悠}
+\Member[2310604109]{梅 康凯}
+\Member[2310604115]{唐 如意}
+\Member[2310604122]{杨 杰瑞}
+\Member[2310604117]{温 璞}
+\Member[2110604112]{刘 继明}
+\Member[2110604106]{李 英杰}
+\Member[2310604103]{杜 仲宇}
+\Member[2310604113]{施 祺}
+\Member[2310604118]{向 宇鸣}
+
+\Teacher{隋 铭明}
+\Teacher{那 嘉明}
+\Teacher{陈 动}
+\Teacher{朱 杰}
+
+\MakeNJFUTitlePage[UseDocTitle]
+\tableofcontents
+\newpage
+
+\section{背景目的}
+
+\section{需求分析}
+
+\section{总体设计}
+
+\section{功能设计}
+
+\section{数据分析}
+
+\section{主要技术手段}
+
+\newpage
+\bibliographystyle{gbt7714-numerical}
+\bibliography{cas-refs}
+
+\end{document}

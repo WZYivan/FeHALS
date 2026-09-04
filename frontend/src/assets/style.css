@@ -451,6 +451,47 @@ body,
   padding: 20px 0;
 }
 
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.stat-label {
+  color: #6b7280;
+}
+
+.stat-value {
+  font-family: 'Consolas', monospace;
+  color: #111827;
+}
+
+.hist-svg {
+  width: 100%;
+  height: 70px;
+  display: block;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.hist-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #9ca3af;
+  font-family: 'Consolas', monospace;
+}
+
 /* ---------- 弓字形面板 ---------- */
 .bowtie-panel {
   margin-bottom: 0;
@@ -494,6 +535,214 @@ body,
   flex: 1;
   color: #6b7280;
   font-size: 12px;
+}
+
+/* ---------- 环境诊断面板 ---------- */
+.env-overall {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.env-overall-ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.env-overall-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.env-overall-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.env-status-icon {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.env-status-text {
+  font-weight: 600;
+}
+
+.env-summary {
+  color: inherit;
+  opacity: 0.8;
+  font-size: 12px;
+}
+
+.env-section {
+  margin-bottom: 14px;
+}
+
+.env-section:last-child {
+  margin-bottom: 0;
+}
+
+.env-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.env-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.env-badge-ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.env-badge-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.env-badge-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.env-detail-row {
+  display: flex;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.env-detail-label {
+  color: #6b7280;
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+.env-detail-value {
+  font-family: 'Consolas', 'Menlo', monospace;
+  color: #111827;
+  word-break: break-all;
+}
+
+.env-detail-hint {
+  color: #dc2626;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.env-sub-group {
+  margin-bottom: 8px;
+}
+
+.env-sub-group:last-child {
+  margin-bottom: 0;
+}
+
+.env-sub-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.env-sub-path {
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.env-sub-message {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.env-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.env-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.env-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.env-icon-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.env-icon-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.env-icon-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.env-check-path {
+  font-family: 'Consolas', 'Menlo', monospace;
+  color: #4b5563;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-check-desc {
+  color: #9ca3af;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.env-text-ok {
+  color: #065f46;
+}
+
+.env-text-warning {
+  color: #92400e;
+}
+
+.env-text-error {
+  color: #dc2626;
 }
 
 /* ---------- 日志控制台 ---------- */
