@@ -14,6 +14,7 @@ import PointCloudPanel from './components/PointCloudPanel.vue'
 import ModelList from './components/ModelList.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import LogConsole from './components/LogConsole.vue'
+import CoverageHeatmap from './components/CoverageHeatmap.vue'
 
 
 const sceneStore = useSceneStore()

@@ -11,6 +11,9 @@ export const useSimulationStore = defineStore('simulation', {
     logs: [], // [{timestamp, level, message}]
     configId: null,
     trajectoryId: null,
+    // 覆盖度分析结果：{grid, bounds, statistics}
+    coverageResult: null,
+    coverageAnalyzing: false,
     // 仿真参数（与 ControlPanel 表单双向绑定）
     params: {
       platform_type: 'UAV',
@@ -28,6 +31,9 @@ export const useSimulationStore = defineStore('simulation', {
     addLog(level, message) {
       this.logs.push({ timestamp: new Date().toLocaleTimeString(), level, message })
     },
+    setCoverageResult(res) {
+      this.coverageResult = res
+    },
     reset() {
       this.logs = []
       this.progress = 0
@@ -35,6 +41,8 @@ export const useSimulationStore = defineStore('simulation', {
       this.message = ''
       this.result = null
       this.taskId = null
+      this.coverageResult = null
+      this.coverageAnalyzing = false
     },
   },
 })

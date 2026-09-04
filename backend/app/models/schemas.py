@@ -11,6 +11,13 @@ class TrajectoryRequest(BaseModel):
     altitude: float = 100.0
 
 
+class CoverageRequest(BaseModel):
+    """点云覆盖度分析请求：点云坐标 + 网格分辨率。"""
+
+    points: List[List[float]]  # [[x, y, z], ...]
+    grid_size: int = 50
+
+
 class ConfigRequest(BaseModel):
     """仿真参数配置请求。"""
 

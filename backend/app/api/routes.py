@@ -12,7 +12,12 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app.config import CONFIGS_DIR, MODELS_DIR, RESULTS_DIR, TRAJECTORIES_DIR
-from app.models.schemas import ConfigRequest, SimulationRunRequest, TrajectoryRequest
+from app.models.schemas import (
+    ConfigRequest,
+    CoverageRequest,
+    SimulationRunRequest,
+    TrajectoryRequest,
+)
 from app.services import (
     config_generator,
     helios_service,
@@ -276,21 +281,12 @@ async def clear_cache(cache_type: str):
     return {"success": True, "type": cache_type, "removed": removed}
 # ==================== 点云覆盖度分析 ====================
 
-class CoverageRequest(BaseModel):
-    points: list  # [[x,y,z], ...]
-    grid_size: int = 50
-
 @router.post("/coverage/analyze")
 async def analyze_coverage(request: CoverageRequest):
-    """分析点云覆盖度"""
+    """分析点云覆盖度：投影到 XY 平面网格，返回密度矩阵与统计指标。"""
     try:
-        # 转换数据
         points = np.array(request.points)
-        
-        # 分析
         analyzer = CoverageAnalyzer(grid_size=request.grid_size)
-        result = analyzer.analyze(points)
-        
-        return result
+        return analyzer.analyze(points)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
