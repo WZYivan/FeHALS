@@ -85,3 +85,54 @@ make                    # 生成 build/Manuscript.pdf
 ## 文档
 
 系统设计详见 [doc/Manuscript.tex](doc/Manuscript.tex)。
+
+## 点云覆盖度分析
+
+新增点云覆盖度分析功能，支持：
+
+- **网格投影**: 将点云投影到水平网格，计算每个单元的点密度
+- **统计分析**: 覆盖率、平均密度、最大/最小密度等指标
+- **可视化生成**: 自动生成热力图和等高线图
+- **多格式支持**: LAS/LAZ/XYZ 点云格式
+
+### API 端点
+
+```bash
+# 分析指定仿真任务的覆盖度
+POST /api/analysis/coverage
+{
+  "task_id": "sim_xxx",
+  "grid_size": 1.0,
+  "generate_heatmap": true,
+  "generate_contour": true
+}
+
+# 快捷方式
+GET /api/analysis/coverage/{task_id}?grid_size=1.0
+```
+
+### Python 使用
+
+```python
+from app.services import coverage_analysis
+
+# 分析点云文件
+result = coverage_analysis.analyze_coverage_from_file(
+    file_path="output.xyz",
+    grid_size=1.0,  # 1m 网格
+    generate_viz=True,
+)
+
+print(f"覆盖率: {result['coverage']['stats']['coverage_ratio']:.2%}")
+print(f"热力图: {result['heatmap_path']}")
+```
+
+### 命令行测试
+
+```bash
+cd backend
+python test_coverage_analysis.py  # 完整测试
+python simple_example.py output.xyz  # 快速分析
+```
+
+详细文档见 [COVERAGE_ANALYSIS.md](COVERAGE_ANALYSIS.md)。

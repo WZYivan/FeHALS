@@ -3,6 +3,15 @@
 ## Unreleased
 
 ### Added
+- **点云覆盖度分析功能**：投影到网格计算点密度，生成热力图和等高线图
+  - 网格投影：将 3D 点云投影到 2D 水平网格
+  - 密度统计：计算每个网格单元的点数、覆盖率、平均密度等指标
+  - 可视化生成：自动生成热力图（matplotlib hot/viridis/plasma 等色图）和等高线图
+  - API 端点：POST `/api/analysis/coverage` 和 GET `/api/analysis/coverage/{task_id}`
+  - Python API：`coverage_analysis.analyze_coverage_from_file()` 和 `analyze_coverage()`
+  - 前端集成：Vue 3 composable `useCoverageAnalysis.js`
+  - 测试脚本：`test_coverage_analysis.py` 和 `simple_example.py`
+  - 详细文档：[COVERAGE_ANALYSIS.md](COVERAGE_ANALYSIS.md)
 - 点云特征统计：结果接口返回全量点统计（点数/平均高度/高度标准差/高度范围，基于降采样前的完整点集），点云 Tab 新增「特征统计」区块（含 XYZ 范围显示）
 - 高度分位数统计（中位数、P5、P95）与强度统计（均值/标准差/范围）
 - 高度分布直方图：服务端基于全量点 40 分箱计算，前端 SVG 渲染，配色与 3D 高度着色一致，悬停显示分箱区间与点数
