@@ -3,6 +3,7 @@
 模型 / 航迹 / 配置 / 仿真 / 结果 / 缓存 六类资源。
 """
 import json
+import numpy as np
 import shutil
 import time
 import uuid
@@ -12,7 +13,12 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app.config import CONFIGS_DIR, MODELS_DIR, RESULTS_DIR, TRAJECTORIES_DIR
-from app.models.schemas import ConfigRequest, SimulationRunRequest, TrajectoryRequest
+from app.models.schemas import (
+    ConfigRequest,
+    CoverageRequest,
+    SimulationRunRequest,
+    TrajectoryRequest,
+)
 from app.services import (
     config_generator,
     env_service,
@@ -20,7 +26,7 @@ from app.services import (
     pointcloud_parser,
     trajectory_generator,
 )
-
+from ..services.coverage import CoverageAnalyzer
 router = APIRouter(prefix="/api")
 
 # 模型注册表：model_id -> {filename, path, url, ext}（单进程内有效）
@@ -321,3 +327,14 @@ async def clear_cache(cache_type: str):
             f.unlink()
             removed += 1
     return {"success": True, "type": cache_type, "removed": removed}
+# ==================== 点云覆盖度分析 ====================
+
+@router.post("/coverage/analyze")
+async def analyze_coverage(request: CoverageRequest):
+    """分析点云覆盖度：投影到 XY 平面网格，返回密度矩阵与统计指标。"""
+    try:
+        points = np.array(request.points)
+        analyzer = CoverageAnalyzer(grid_size=request.grid_size)
+        return analyzer.analyze(points)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

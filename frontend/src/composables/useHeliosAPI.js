@@ -35,11 +35,15 @@ export function useHeliosAPI() {
   // ---- 结果 ----
   const getResult = (id) => api.get(`/results/${id}`).then((r) => r.data)
 
+  // ---- 覆盖度分析 ----
+  const analyzeCoverage = (points, gridSize = 50) =>
+    api.post('/coverage/analyze', { points, grid_size: gridSize }).then((r) => r.data)
+
   // ---- 缓存 ----
   const listCache = () => api.get('/cache').then((r) => r.data)
   const clearCache = (type) => api.delete(`/cache/${type}`).then((r) => r.data)
 
-// ---- 环境诊断 ----
+  // ---- 环境诊断 ----
   const diagnoseEnv = () => api.get('/env/diagnose').then((r) => r.data)
 
   return {
@@ -54,6 +58,7 @@ export function useHeliosAPI() {
     getLogs,
     cancelSimulation,
     getResult,
+    analyzeCoverage,
     listCache,
     clearCache,
     diagnoseEnv,
