@@ -20,13 +20,30 @@
 %\documentclass[a4paper,fleqn,longmktitle]{cas-sc}
 \documentclass[a4paper,fleqn]{cas-sc}
 \usepackage{njfutitlepage}
-% \usepackage[numbers]{natbib}
 \usepackage[authoryear]{natbib}
-% \usepackage[authoryear,longnamesfirst]{natbib}
 \usepackage{csquotes}
 \usepackage[UTF8]{ctex}
-\usepackage{gbt7714}
-\usepackage{makecell}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{etoolbox}
+\usepackage{placeins}
+\usepackage{booktabs}  % 三线表支持
+
+\newcommand{\refSec}[1]{\hyperref[#1]{Section~\ref*{#1}}}
+\newcommand{\refFig}[1]{\hyperref[#1]{Fig.~\ref*{#1}}}
+\newcommand{\refTab}[1]{\hyperref[#1]{Table~\ref*{#1}}}
+\renewcommand{\figurename}{Fig.}
+
+\newcommand{\FeHALSRepo}{\href{https://github.com/WZYivan/FeHALS}{FeHALS github Main Repo}}
+
+%%%Author definitions
+\def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
+\tsc{WGM}
+\tsc{QE}
+\tsc{EP}
+\tsc{PMS}
+\tsc{BEC}
+\tsc{DE}
+%%%
 
 \begin{document}
 \let\WriteBookmarks\relax
@@ -35,7 +52,7 @@
 
 \shortauthors{7组（王孜悠）}
 \shorttitle{}
-\title [mode = title]{\makecell[c]{FeHALS：基于Web的3D可视化航路规划与激光仿真系统\\\textbf{技术设计书}}}
+\title[mode=title]{FeHALS：基于Web的3D可视化航路规划与激光仿真系统技术设计书}
 
 \Course{GIS设计与开发}
 \Major{测绘工程}
@@ -58,23 +75,316 @@
 \Teacher{陈 动}
 \Teacher{朱 杰}
 
+\author[1]{王 孜悠}[style=chinese, orcid=2310604116]
+\ead{WZYivan}
+\credit{文档编写，思路构建，代码实现，功能验证，项目管理，代码审查，图表绘制}
+
+\author[1]{梅 康凯}[style=chinese, orcid=2310604109]
+\ead{zhangqilinghy}
+\credit{代码实现，系统适配}
+
+\author[1]{唐 如意}[style=chinese, orcid=2310604115]
+\ead{Try6743}
+\credit{代码实现}
+
+\author[1]{杨 杰瑞}[style=chinese, orcid=2310604122]
+\ead{19951391030yjr-sudo}
+\credit{图表绘制}
+
+\author[1]{温 璞}[style=chinese, orcid=2310604117]
+\credit{暂无贡献}
+
+\author[1]{刘 继明}[style=chinese, orcid=2110604112]
+\credit{暂无贡献}
+
+\author[1]{李 英杰}[style=chinese, orcid=2110604106]
+\credit{暂无贡献}
+
+\author[1]{杜 仲宇}[style=chinese, orcid=2310604103]
+\credit{暂无贡献}
+
+\author[1]{施 祺}[style=chinese, orcid=2310604113]
+\credit{暂无贡献}
+
+\author[1]{向 宇鸣}[style=chinese, orcid=2310604118]
+\credit{暂无贡献}
+
+\author[1]{隋 铭明}[style=chinese]
+\fnmark[1]
+\fntext[1]{指导老师}
+\credit{监督指导}
+
+\author[1]{那 嘉明}[style=chinese]
+\fnmark[1]
+\credit{监督指导}
+
+\author[1]{陈 动}[style=chinese]
+\fnmark[1]
+\credit{监督指导}
+
+\author[1]{朱 杰}[style=chinese]
+\fnmark[1]
+\credit{监督指导}
+
+\affiliation[1]{organization={College of Civil Engineering, Nanjing Forestry University},
+  addressline={Longpan Rd.},
+  city={Nanjing},
+  postcode={210037},
+  country={China}}
+
+\begin{abstract}
+  机载激光扫描（Airborne Laser Scanning, ALS）能够直接获取地表及地物的三维离散采样，是数字高程模型生产、森林调查、城市三维建模和灾害监测的重要数据源。真实飞行采集受设备成本、空域、天气和任务风险制约，外业前通过虚拟场景试验航线与扫描参数，可以降低反复试飞的成本。HELIOS++是面向地面、移动、无人机及机载激光扫描的开源仿真框架，支持场景、平台、扫描器和测量任务的组合配置，但其命令行和XML配置方式对初学者存在较高门槛。FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning）以浏览器为操作入口，把三维预览、航点编辑、弓字形航线生成、参数配置、HELIOS++任务执行、实时日志和点云分析串联为完整流程。开放式WebGIS技术便于跨平台访问与后续扩展，浏览器侧利用WebGL和Three.js完成硬件加速三维显示，无需安装专用桌面GIS软件。
+\end{abstract}
+
+\begin{keywords}
+  ALS \sep 航路规划 \sep 三维可视化 \sep B/S架构 \sep HELIOS++
+\end{keywords}
+
 \MakeNJFUTitlePage[UseDocTitle]
+\maketitle
 \tableofcontents
-\newpage
+\hrulefill
 
 \section{背景目的}
 
+\subsection{项目背景}
+
+机载激光扫描（Airborne Laser Scanning，ALS）能够直接获取地表及地物的三维离散采样，是数字高程模型生产、森林调查、城市三维建模和灾害监测的重要数据源。真实飞行采集受设备成本、空域、天气和任务风险制约，外业前通过虚拟场景试验航线与扫描参数，可以降低反复试飞的成本。HELIOS++是面向地面、移动、无人机及机载激光扫描的开源仿真框架，支持场景、平台、扫描器和测量任务的组合配置\citep{heliosPlusPlus}，但其命令行和XML配置方式对初学者存在较高门槛。
+
+FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning）以浏览器为操作入口，把三维预览、航点编辑、弓字形航线生成、参数配置、HELIOS++任务执行、实时日志和点云分析串联为完整流程。开放式WebGIS技术便于跨平台访问与后续扩展\citep{opengis,viswebdrone,lidarWebgis}，浏览器侧利用WebGL和Three.js完成硬件加速三维显示，无需安装专用桌面GIS软件。
+
+\subsection{建设目标}
+
+本项目旨在为HELIOS++提供直观、可交互、可追踪的前端工作台：集中管理模型、航迹和扫描参数；在Z-up三维场景中完成航点规划；生成HELIOS++所需轨迹和XML；以异步任务运行仿真并实时显示日志；解析XYZ、LAS、LAZ结果，提供点云渲染与统计；形成便于多人协作和迭代的WebGIS工程结构。
+
+系统面向激光雷达仿真学习者、测绘工程学生和方案验证人员，定位为教学与原型验证工具，不替代实际航空作业中的空域审批、飞控、坐标转换及成果质量验收。本设计书以GitHub仓库master分支当前实现为准，规划中的LOD、任务队列、Docker等功能不会当作现成功能描述。
+
+\subsection{设计原则}
+
+系统遵循坐标与参数一致、操作可视化、任务可追踪、前后端模块化和能力渐进增强原则。前端、后端和HELIOS++均以Z轴表示高程；任务具有唯一标识、状态、日志和结果；组件、状态、接口和服务分层；当前先满足课程演示和百万点级预览，超大点云与生产部署作为后续建设内容。
+
 \section{需求分析}
+
+\subsection{业务流程}
+
+一次完整业务流程为：启动前后端并检查HELIOS++环境；上传场景模型并检查方向和包围盒；手工编辑航点或由矩形生成弓字形航线；设置平台、飞行与扫描参数；生成轨迹和配置；提交仿真并查看实时日志；加载结果点云、查看统计与直方图；下载结果或清理缓存。
+
+\subsection{功能需求}
+
+系统功能需求如\refTab{tab:functions}所示。
+
+\begin{table}[pos=!htbp]
+  \centering
+  \caption{FeHALS功能需求。}
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l}
+    \toprule
+    编号 & 需求说明 \\
+    \midrule
+    FR-01 & 上传OBJ、GLTF、GLB、STL；列出、显示/隐藏、删除模型，显示包围盒。仅OBJ作为当前HELIOS++场景输入。 \\
+    FR-02 & 提供旋转、缩放、平移、视角适配、Z-up网格和模型方向转换。 \\
+    FR-03 & 支持点击添加、拖动、右键或Delete删除、列表编辑和清空，并以折线连接。 \\
+    FR-04 & 选择矩形范围和航线间距，自动生成连续往返的弓字形航点。 \\
+    FR-05 & 以所有模型世界包围盒的最大Z加20m计算建议高度，并受平台范围约束。 \\
+    FR-06 & 设置UAV/Airborne、速度、高度、扫描频率、扫描半角、脉冲频率和输出格式。 \\
+    FR-07 & 生成恒定高度轨迹文件和HELIOS++ survey XML。 \\
+    FR-08 & 异步调用HELIOS++，记录pending/running/completed/failed状态并支持取消。 \\
+    FR-09 & WebSocket实时推送日志，REST接口可补取历史日志。 \\
+    FR-10 & 查询、下载和解析结果；显示点数、边界、高程/强度统计及40组直方图。 \\
+    FR-11 & 统计并分类清理models、trajectories、configs、results。 \\
+    \bottomrule
+  \end{tabular*}
+  \label{tab:functions}
+\end{table}
+
+\subsection{非功能需求与约束}
+
+易用性要求核心流程在单页完成，参数显示单位、范围和默认值；性能要求全量统计与显示数据分离，前端渲染最多一百万点，XYZ每五十万行分块读取；可靠性要求子进程失败不拖垮API，模型异步加载期间删除不产生残留对象；可维护性要求视图、Pinia状态、API客户端、路由、数据模型和业务服务解耦。
+
+系统依赖正确安装的HELIOS++及其环境路径，未配置时只能使用三维预览。UAV与Airborne当前均引用copter\_linearpath平台和riegl\_vux-1uav扫描器，主要由参数范围区分。航点在$z=0$地面编辑，生成轨迹时统一叠加飞行高度，属于恒高简化模型。仓库说明记录本机构建的LASlib输出异常，因此默认XYZ；LAS/LAZ只有在HELIOS++正确链接LASlib时可用。任务和配置主要存于单进程内存，系统也未设置账户权限，生产部署前必须补充持久化、鉴权、上传限制、HTTPS和审计。
 
 \section{总体设计}
 
+\subsection{系统架构}
+
+FeHALS采用B/S三层架构：Vue 3、Three.js、Pinia和Axios构成表现层；FastAPI、Pydantic、asyncio与WebSocket构成服务层；HELIOS++及其平台、扫描器、场景资产构成计算层。本地目录保存模型、轨迹、配置和结果，模型manifest用于服务重启后的恢复。前端只交换JSON、文件和任务标识，后端负责文件组织、配置生成、进程管理和结果解析。
+
+系统总体架构如\refFig{fig:arch}所示。
+
+\begin{figure}[pos=!htbp]
+  \centering
+  \caption{FeHALS总体架构。}
+  \includegraphics[width=0.85\textwidth]{figs/gernal_fehals_arch.pdf}
+  \label{fig:arch}
+\end{figure}
+
+前端中Scene3D.vue管理画布，ControlPanel.vue管理参数，WaypointList.vue管理航点，LogConsole.vue展示日志，PointCloudPanel.vue展示结果。共享状态由scene、waypoints、simulation三个store管理；跨组件逻辑放在composables。后端按API路由、Pydantic schema、业务service和config分层。
+
+系统模块架构如\refFig{fig:module}所示。
+
+\begin{figure}[pos=!htbp]
+  \centering
+  \caption{FeHALS模块架构。}
+  \includegraphics[width=\textwidth]{figs/detialed_fehals_arch.pdf}
+  \label{fig:module}
+\end{figure}
+
+\subsection{数据与控制流程}
+
+组件操作先更新Pinia，再由useHeliosAPI请求后端。后端为轨迹、配置和任务分配UUID，生成文件并启动HELIOS++子进程；日志写入任务缓冲并广播；成功后定位结果文件、计算全量统计并返回显示抽样；前端创建THREE.Points绘制点云。
+
+系统工作流程如\refFig{fig:workflow}所示。
+
+\begin{figure}[pos=!htbp]
+  \centering
+  \caption{FeHALS工作流程。}
+  \includegraphics[width=0.85\textwidth]{figs/gernal_fehals_workflow.pdf}
+  \label{fig:workflow}
+\end{figure}
+
+开发环境中Vite默认使用5173端口，并把/api和/ws转发到8000端口FastAPI；后端通过/static发布文件。Windows用run.bat，类Unix用run.sh。当前是单机双进程课程演示结构，尚未包括数据库、反向代理、容器编排和集中监控。
+
+\subsection{关键设计决策}
+
+采用Web前端可以降低分发门槛并把场景、参数与日志放在同一工作区\citep{viswebdrone,lidarWebgis}。系统显式将相机up设为$(0,0,1)$，Y-up模型加载时绕X轴旋转$90^\circ$，保证测绘高程语义一致。资源操作采用REST，连续日志采用WebSocket\citep{fielding2000rest,WebSocket}。GLTF/GLB/STL只承担当下前端预览，避免与HELIOS++输入能力混淆。点云采取“全量统计、抽样渲染”，在统计准确性与交互性能间折中；更大数据仍需要层次LOD或渐进渲染\citep{pointCloudRendering,pointCloudTerrain}。
+
 \section{功能设计}
+
+\subsection{模型、场景与航点}
+
+后端校验扩展名并以随机标识保存上传文件，返回静态URL。前端按扩展名选择OBJLoader、GLTFLoader或STLLoader，将对象加入modelsGroup。模型可见性和包围盒可切换，Box3计算尺寸。若模型在异步加载完成前已被删除，pendingRemoval会使迟到结果被释放，避免“幽灵对象”。相机按包围盒自适应，地面为XY平面，Z为高程。
+
+Raycaster与$z=0$隐形地面求交：点击添加航点，拖动修改XY，右键或Delete删除，红色球体和折线表示路径，选中航点变黄。拖动时临时禁用相机控制，以25像素平方阈值区分点击和拖动。弓字形航线在矩形内按间距$d$生成，条数为
+
+\begin{equation}
+N = \left| \frac{y_{\max} - y_{\min}}{d} \right| + 1,
+\end{equation}
+
+相邻扫描线的X端点次序交替，形成连续往返路径。
+
+\subsection{参数、轨迹和配置}
+
+建议高度取场景包围盒并集最高点$z_{\max}$加$20\text{ m}$：
+
+\begin{equation}
+h_{\text{suggest}} = z_{\max} + 20\text{ m}.
+\end{equation}
+
+UAV速度为$0.5$--$50\text{ m/s}$，高度为$3$--$500\text{ m}$；Airborne速度为$10$--$200\text{ m/s}$，高度为$3$--$5000\text{ m}$。RIEGL VUX-1UAV扫描频率为$10$--$200\text{ Hz}$，扫描半角为$1^\circ$--$165^\circ$，脉冲频率为$50$--$550\text{ kHz}$。后端将航点改写为统一高度的轨迹文件，并把平台、扫描器、轨迹、速度、频率、半角和格式写入survey XML。轨迹生成与配置生成分离，便于复用和排错。
+
+\subsection{仿真、日志和结果}
+
+任务提交后检查trajectory、config和可选scene model，分配UUID并由pending进入running。HELIOS++标准输出和错误输出逐行保存并广播到/ws/logs/\{task\_id\}；退出码为0且找到结果时进入completed，否则进入failed。运行中任务可取消。前端保存taskId、状态、进度、日志和结果，WebSocket不可用时可通过REST查询。
+
+LAS/LAZ由laspy读取\citep{laspy}，XYZ分块读取并过滤非法记录。统计包括总点数、XYZ边界、高程均值、标准差、最小/最大、中位数、P5/P95、40组高程直方图，以及存在强度字段时的强度统计。渲染超过一百万点时使用覆盖全文件序列的等间隔索引抽样。前端以BufferGeometry和PointsMaterial绘制，支持固定色、高度色和强度色；归一化为
+
+\begin{equation}
+t = \frac{v - v_{\min}}{\max(v_{\max} - v_{\min}, 1)},
+\end{equation}
+
+再映射至蓝—青—绿—黄—红色带。抽样仅影响显示，不改变全量统计。
+
+\subsection{接口设计}
+
+系统后端REST接口如\refTab{tab:apis}所示。
+
+\begin{table}[pos=!htbp]
+  \centering
+  \caption{FeHALS后端接口。}
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l l}
+    \toprule
+    方法 & 路径 & 说明 \\
+    \midrule
+    POST & /api/models/upload & 上传模型 \\
+    GET & /api/models & 查询模型列表 \\
+    DELETE & /api/models/\{model\_id\} & 删除模型 \\
+    POST & /api/trajectory/generate & 生成航迹 \\
+    GET & /api/trajectories & 查询航迹列表 \\
+    GET & /api/trajectories/download/\{file\_id\} & 下载航迹 \\
+    POST & /api/config/generate & 生成配置 \\
+    POST & /api/simulation/run & 创建仿真任务 \\
+    GET & /api/simulation/status/\{task\_id\} & 查询任务状态 \\
+    GET & /api/simulation/logs/\{task\_id\} & 获取任务日志 \\
+    POST & /api/simulation/cancel/\{task\_id\} & 取消任务 \\
+    GET & /api/results/\{task\_id\} & 获取结果统计和抽样 \\
+    GET & /api/results/\{task\_id\}/download & 下载结果 \\
+    GET & /api/cache & 查看缓存统计 \\
+    DELETE & /api/cache/\{cache\_type\} & 分类清理缓存 \\
+    \bottomrule
+  \end{tabular*}
+  \label{tab:apis}
+\end{table}
+
+主要数据对象如\refTab{tab:dataobjects}所示。
+
+\begin{table}[pos=!htbp]
+  \centering
+  \caption{主要数据对象。}
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l l l}
+    \toprule
+    对象 & 形式 & 关键字段 & 用途 \\
+    \midrule
+    场景模型 & OBJ/GLTF/GLB/STL & id, name, url, up, bbox & 前端均可预览，当前只有OBJ进入仿真。 \\
+    航点 & JSON & x, y, z & Pinia中编辑，生成轨迹前可反复修改。 \\
+    轨迹 & 文本 & id, altitude, path & 由航点生成，供配置引用。 \\
+    配置 & XML & platform, scanner, speed, angle, frequency & 供HELIOS++读取。 \\
+    任务 & 内存对象 & task\_id, status, logs, result & 当前随服务进程生命周期存在。 \\
+    结果 & XYZ/LAS/LAZ & X, Y, Z, 可选intensity & 保存原始文件并产生统计和显示抽样。 \\
+    \bottomrule
+  \end{tabular*}
+  \label{tab:dataobjects}
+\end{table}
+
+后端用Pydantic进行结构校验，资源不存在返回404，参数或格式错误返回4xx，子进程失败保留日志。前端在上传、加载、请求和连接处捕获异常并给出可操作提示。公网部署时不应暴露服务器绝对路径和内部堆栈。
 
 \section{数据分析}
 
+\subsection{数据对象与组织}
+
+后端请求模型包括TrajectoryRequest、ConfigRequest、SimulationRunRequest和SimulationStatus。前端scene store管理模型和点云选项，waypoints store管理航点，simulation store管理任务、日志、结果与参数。大型Three.js对象由单例useThreeScene管理，store只保存业务镜像，避免响应式系统深度代理图形对象。
+
+\subsection{坐标、统计与性能}
+
+距离单位为米，速度为$\text{m/s}$，扫描频率为$\text{Hz}$，脉冲频率为$\text{kHz}$，扫描角为半角度数。系统当前不读取EPSG，也不进行投影转换，因此模型和轨迹必须预先处于同一以米为单位的坐标系；后续应增加CRS元数据和pyproj转换。
+
+设点数为$n$、高程为$z_i$，则
+
+\begin{equation}
+\bar{z} = \frac{1}{n}\sum_{i=1}^{n} z_i, \qquad
+\sigma_z = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (z_i - \bar{z})^2}.
+\end{equation}
+
+中位数、P5和P95描述主体分布并降低极端值影响。若$n > m$且$m = 1,000,000$，显示索引可取
+
+\begin{equation}
+i_k = \left\lfloor \frac{k(n-1)}{m-1} \right\rfloor, \quad k = 0, \dots, m-1.
+\end{equation}
+
+该方法简单确定，但并非空间均匀采样；超大点云仍需八叉树、多分辨率或渐进策略\citep{pointCloudRendering,pointCloudTerrain}。
+
+后端按models、trajectories、configs、results建目录。数据依赖为“场景和航点 $\rightarrow$ 轨迹与参数 $\rightarrow$ 配置 $\rightarrow$ 任务 $\rightarrow$ 点云”。生产版本应记录资源引用，避免清理活动任务依赖。上传侧还需限制大小、校验MIME和解析结果、防路径穿越；结果下载只能通过任务记录定位。质量检查至少覆盖航点数、有限坐标、飞行高度、扫描器范围、文件存在、退出码和非空结果。
+
 \section{主要技术手段}
 
-\newpage
+\subsection{前端与三维显示}
+
+Vue 3组合式API构建单页应用，Vite提供开发与构建，Pinia管理共享状态，Axios统一请求。Three.js封装相机、光照、材质、Loader、BufferGeometry、Raycaster和OrbitControls\citep{threejs}，实现模型、航点和点云交互。点云使用单一缓冲几何，避免逐点对象开销。WebGL无插件硬件加速适合Web端地形点云显示\citep{pointCloudTerrain}，后续可将解析放入WebWorker，并引入八叉树LOD或渐进渲染\citep{pointCloudRendering}。
+
+\subsection{后端与HELIOS++}
+
+FastAPI提供异步路由与OpenAPI文档\citep{fastapi}，Pydantic在业务执行前完成类型校验\citep{pydantic}，asyncio子进程避免长任务阻塞API，WebSocket负责连续日志\citep{WebSocket}。REST有利于资源接口解耦\citep{fielding2000rest}，WebSocket适合持续消息。HELIOS++使用C++实现，支持多类场景、平台和扫描器，并允许在物理真实性和计算成本间配置\citep{heliosPlusPlus}。本系统采用命令行子进程集成，便于故障隔离和日志记录；平台/扫描器范围来自HELIOS++资产XML。
+
+LAS/LAZ由laspy解析\citep{laspy}，XYZ以文本流读取，NumPy计算统计。Web端LiDAR系统应明确处理、存储和分发边界\citep{lidarWebgis}；开源Web架构可将后端处理与浏览器可视分析组成完整流程\citep{viswebdrone}。
+
+\subsection{协作、测试与改进}
+
+仓库通过GitHub分支、Pull Request和审查协作；README说明安装，CHANGELOG记录演进，TODO区分已实现与计划项。交付前应补充：轨迹、弓字形、参数边界、XML转义、XYZ解析和统计单元测试；所有REST路由的接口测试；小型OBJ场景的HELIOS++集成测试；模型增删、航点拖拽、日志重连、点云着色的前端测试；10万、100万及更大点云的耗时、帧率和内存测试。
+
+后续应优先完成HELIOS++环境诊断、统一错误结构与自动测试；再将任务、配置和资源关系持久化并引入任务队列；随后增加CRS、空间索引、LOD、覆盖热力图和仿真动画；最后完成Docker、反向代理、鉴权、HTTPS、配额与监控。当前FeHALS已打通“可视化规划—配置—仿真—日志—点云分析”的核心链路，适合作为课程设计和HELIOS++入门工作台。
+
+\FloatBarrier
+
+\printcredits
+
 \bibliographystyle{gbt7714-numerical}
 \bibliography{cas-refs}
 
