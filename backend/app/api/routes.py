@@ -15,9 +15,9 @@ from app.config import CONFIGS_DIR, MODELS_DIR, RESULTS_DIR, TRAJECTORIES_DIR
 from app.models.schemas import ConfigRequest, SimulationRunRequest, TrajectoryRequest
 from app.services import (
     config_generator,
-    env_service,
     helios_service,
     pointcloud_parser,
+    task_queue,
     trajectory_generator,
 )
 
@@ -196,13 +196,25 @@ async def run_simulation(req: SimulationRunRequest):
         params=params,
     )
 
-    # 5. 启动仿真
+    # 5. 构造任务并入队（由队列调度器决定何时执行）
     output_dir = RESULTS_DIR / f"sim_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}"
     output_dir.mkdir(parents=True, exist_ok=True)
     output_format = params.get("output_format", "LAS")
 
-    task = helios_service.run_simulation(str(survey_xml), str(output_dir), output_format)
-    return {"task_id": task.task_id}
+    task = helios_service.SimulationTask(
+        helios_service.new_task_id(),
+        str(survey_xml),
+        str(output_dir),
+        output_format,
+    )
+    task_queue.queue_manager.submit(task)
+    return {"task_id": task.task_id, "status": task.status}
+
+
+@router.get("/simulation/queue")
+async def simulation_queue():
+    """返回任务队列快照（排队中 + 运行中 + 最近结束）。"""
+    return task_queue.queue_manager.snapshot()
 
 
 @router.get("/simulation/status/{task_id}")
@@ -229,7 +241,7 @@ async def simulation_logs(task_id: str):
 
 @router.post("/simulation/cancel/{task_id}")
 async def cancel_simulation(task_id: str):
-    ok = await helios_service.cancel(task_id)
+    ok = await task_queue.queue_manager.cancel(task_id)
     return {"success": ok}
 
 
@@ -264,12 +276,6 @@ async def download_result(task_id: str, format: str = "las"):
     p = Path(task.result_file)
     return FileResponse(str(p), filename=p.name, media_type="application/octet-stream")
 
-# ---------------------------- 环境诊断 ----------------------------
-
-@router.get("/env/diagnose")
-async def diagnose_env():
-    """检测 HELIOS++ 运行环境：可执行文件、资源目录完整性、静态工作目录。"""
-    return await env_service.diagnose_all()
 
 # ---------------------------- 缓存管理 ----------------------------
 

@@ -28,6 +28,7 @@ export function useHeliosAPI() {
 
   // ---- 仿真 ----
   const runSimulation = (payload) => api.post('/simulation/run', payload).then((r) => r.data)
+  const getQueue = () => api.get('/simulation/queue').then((r) => r.data)
   const getStatus = (id) => api.get(`/simulation/status/${id}`).then((r) => r.data)
   const getLogs = (id) => api.get(`/simulation/logs/${id}`).then((r) => r.data)
   const cancelSimulation = (id) => api.post(`/simulation/cancel/${id}`).then((r) => r.data)
@@ -39,9 +40,6 @@ export function useHeliosAPI() {
   const listCache = () => api.get('/cache').then((r) => r.data)
   const clearCache = (type) => api.delete(`/cache/${type}`).then((r) => r.data)
 
-// ---- 环境诊断 ----
-  const diagnoseEnv = () => api.get('/env/diagnose').then((r) => r.data)
-
   return {
     uploadModel,
     listModels,
@@ -50,13 +48,13 @@ export function useHeliosAPI() {
     listTrajectories,
     generateConfig,
     runSimulation,
+    getQueue,
     getStatus,
     getLogs,
     cancelSimulation,
     getResult,
     listCache,
     clearCache,
-    diagnoseEnv,
   }
 }
 
@@ -64,6 +62,25 @@ export function useHeliosAPI() {
 export function connectLogWS(taskId, handlers = {}) {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   const ws = new WebSocket(`${proto}://${location.host}/ws/logs/${taskId}`)
+  ws.onopen = () => handlers.onOpen && handlers.onOpen()
+  ws.onmessage = (e) => {
+    let msg
+    try {
+      msg = JSON.parse(e.data)
+    } catch {
+      return
+    }
+    handlers.onMessage && handlers.onMessage(msg)
+  }
+  ws.onclose = () => handlers.onClose && handlers.onClose()
+  ws.onerror = (err) => handlers.onError && handlers.onError(err)
+  return ws
+}
+
+// WebSocket 队列连接：WS /ws/queue（快照 + 队列事件）
+export function connectQueueWS(handlers = {}) {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+  const ws = new WebSocket(`${proto}://${location.host}/ws/queue`)
   ws.onopen = () => handlers.onOpen && handlers.onOpen()
   ws.onmessage = (e) => {
     let msg
