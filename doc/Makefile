@@ -2,7 +2,7 @@
 
 LATEXMK := latexmk -xelatex -outdir=build
 
-main: description designbook
+main: description designbook document
 	cp build/*.pdf ../
 
 description: src/DESCRIPTION.tex
@@ -14,7 +14,11 @@ designbook: src/DESIGNBOOK.tex
 	@echo ">>> build $<" 
 	@$(LATEXMK) $< 
 	@echo ">>> built $<" 
-	
+
+document: src/DOCUMENT.tex
+	@echo ">>> build $<" 
+	@$(LATEXMK) $< 
+	@echo ">>> built $<" 
 
 DRAWIO_SRC := $(wildcard figs/src/*.drawio)
 DRAWIO_PDF := $(patsubst figs/src/%.drawio, figs/%.pdf, $(DRAWIO_SRC))
