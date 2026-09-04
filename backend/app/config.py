@@ -18,17 +18,37 @@ CONFIGS_DIR = STATIC_DIR / "configs"
 RESULTS_DIR = STATIC_DIR / "results"
 
 # HELIOS++ 可执行文件路径（helio++ v2.x）
-HELIOS_PATH = os.getenv("HELIOS_PATH", "helios++")
+# 检测 Windows Conda 安装：C:\Users\31130\helios\Lib\site-packages\pyhelios\bin\helios++.exe
+HELIOS_PATH = os.getenv("HELIOS_PATH", r"C:\Users\31130\helios\Lib\site-packages\pyhelios\bin\helios++.exe")
 
-# HELIOS++ 源仓库根目录（含 data/sceneparts、data/scenes 等演示资源）
-_HELIOS_REPO = Path(os.getenv("HELIOS_REPO", "/home/azusa/file/project/3rd/helios"))
+# HELIOS++ 资源路径（Conda 安装：pyhelios 包目录）
+_HELIOS_REPO = Path(os.getenv("HELIOS_REPO", r"C:\Users\31130\helios\Lib\site-packages\pyhelios"))
+
+# HELIOS++ Conda 环境根目录
+_HELIOS_CONDA = Path(os.getenv("HELIOS_CONDA", r"C:\Users\31130\helios"))
+
+# 确保 HELIOS++ 的 DLL 依赖在 PATH 中（Windows Conda 环境需要）
+def _setup_helios_path() -> None:
+    """将 HELIOS++ Conda 环境的 bin 目录添加到 PATH，确保 DLL 可以找到。"""
+    if os.name == 'nt':  # Windows only
+        helios_bin_dirs = [
+            str(_HELIOS_CONDA),
+            str(_HELIOS_CONDA / "Library" / "bin"),
+            str(_HELIOS_CONDA / "Library" / "usr" / "bin"),
+            str(_HELIOS_CONDA / "Scripts"),
+        ]
+        current_path = os.environ.get("PATH", "")
+        new_paths = [p for p in helios_bin_dirs if p not in current_path and os.path.exists(p)]
+        if new_paths:
+            os.environ["PATH"] = ";".join(new_paths) + ";" + current_path
+
+# 启动时设置 PATH
+_setup_helios_path()
 
 # HELIOS++ --assets 搜索路径：
-#   - 仓库根目录：解析 survey 中的 data/sceneparts、data/scenes 等演示资源
-#   - pyhelios 数据目录：解析 data/platforms.xml、data/scanners_*.xml 平台/扫描器目录
+#   - pyhelios 数据目录：解析 data/sceneparts、data/scenes、data/platforms.xml 等
 _DEFAULT_ASSETS = [
     str(_HELIOS_REPO),
-    str(_HELIOS_REPO / "python" / "pyhelios"),
 ]
 HELIOS_ASSETS = [
     p for p in os.getenv("HELIOS_ASSETS", os.pathsep.join(_DEFAULT_ASSETS)).split(os.pathsep) if p
@@ -36,6 +56,9 @@ HELIOS_ASSETS = [
 
 # 仿真超时时间（秒）
 SIMULATION_TIMEOUT = int(os.getenv("FEHALS_SIM_TIMEOUT", "300"))
+
+# 最大并发仿真数（1 = 严格顺序执行；>1 = 并发调度）
+MAX_CONCURRENT_SIMULATIONS = int(os.getenv("FEHALS_MAX_CONCURRENT", "1"))
 
 # CORS 允许来源（开发环境放开）
 CORS_ORIGINS = [o for o in os.getenv("FEHALS_CORS_ORIGINS", "*").split(",") if o]
