@@ -34,3 +34,11 @@
 - 杨杰瑞：绘制了 [系统架构图](doc/figs/src/detialed_fehals_arch.drawio) 、[数据流向图](doc/figs/src/detialed_fehals_workflow.drawio)、 [图概](doc/figs/src/graphicalabstract.drawio)。
 
 > 本人的开发环境是 `WSL` ，属于Linux系统，因此最初没有Windows系统的适配。
+
+## 2026-09-04
+
+完成了 [API文档](doc/src/DOCUMENT.tex) 的初稿，按道理应该随着各个功能的增加有功能的作者添加并维护。因此我这里同样也只完成了一个初稿。
+
+合并了李英杰的PR，增加了适应不同系统的环境监测功能。
+
+施祺、刘继明、杜仲宇等人仍在继续开发其各自选择的功能或文档。
