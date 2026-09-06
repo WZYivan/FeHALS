@@ -1,9 +1,16 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useSimulationStore } from '../stores/simulation'
 
 const simStore = useSimulationStore()
 const box = ref(null)
+
+const selectedId = computed({
+  get: () => simStore.selectedTaskId,
+  set: (v) => simStore.selectTask(v || null),
+})
+
+const tasks = computed(() => simStore.taskList)
 
 // 自动滚动到底部
 watch(
@@ -15,7 +22,7 @@ watch(
 )
 
 function clear() {
-  simStore.logs = []
+  simStore.clearLogs()
 }
 </script>
 
@@ -23,6 +30,12 @@ function clear() {
   <section class="panel log-console">
     <div class="panel-head">
       <h3 class="panel-title">日志控制台</h3>
+      <select v-model="selectedId" class="log-task-select">
+        <option :value="null">全局日志</option>
+        <option v-for="t in tasks" :key="t.taskId" :value="t.taskId">
+          {{ t.taskId }}
+        </option>
+      </select>
       <button class="btn btn-sm" @click="clear">清空</button>
     </div>
     <div ref="box" class="log-box">
@@ -35,3 +48,19 @@ function clear() {
     </div>
   </section>
 </template>
+
+<style scoped>
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title {
+  margin-right: auto;
+}
+.log-task-select {
+  max-width: 220px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+</style>

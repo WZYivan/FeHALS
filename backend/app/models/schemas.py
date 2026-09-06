@@ -37,7 +37,31 @@ class SimulationStatus(BaseModel):
     """仿真状态。"""
 
     task_id: str
-    status: str  # pending | running | completed | failed
+    status: str  # queued | running | completed | failed | cancelled
     progress: int = 0
     message: str = ""
     result_file: Optional[str] = None
+
+
+class QueueTaskBrief(BaseModel):
+    """队列快照中的单任务摘要。"""
+
+    task_id: str
+    status: str
+    progress: int = 0
+    message: str = ""
+    priority: int = 0
+    output_format: str = "XYZ"
+    submitted_at: Optional[float] = None
+    started_at: Optional[float] = None
+    finished_at: Optional[float] = None
+    result_file: Optional[str] = None
+
+
+class QueueSnapshot(BaseModel):
+    """仿真任务队列快照。"""
+
+    max_concurrency: int
+    running_count: int
+    queued_count: int
+    tasks: List[QueueTaskBrief]
