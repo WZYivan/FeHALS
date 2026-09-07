@@ -1,20 +1,18 @@
 """REST API 路由。
-
-模型 / 航迹 / 配置 / 仿真 / 结果 / 缓存 六类资源。
+模型 / 航迹 / 配置 / 仿真 / 结果 / 缓存 / 环境诊断 七类资源。
 """
 import json
 import shutil
 import time
 import uuid
 from pathlib import Path
-
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-
 from app.config import CONFIGS_DIR, MODELS_DIR, RESULTS_DIR, TRAJECTORIES_DIR
 from app.models.schemas import ConfigRequest, SimulationRunRequest, TrajectoryRequest
 from app.services import (
     config_generator,
+    env_service,
     helios_service,
     pointcloud_parser,
     task_queue,
@@ -25,18 +23,14 @@ router = APIRouter(prefix="/api")
 
 # 模型注册表：model_id -> {filename, path, url, ext}（单进程内有效）
 MODEL_REGISTRY: dict = {}
-
 # 允许上传的模型格式（其中仅 .obj 可参与 HELIOS++ 仿真）
 ALLOWED_MODEL_EXTS = {".obj", ".gltf", ".glb", ".stl"}
-
 _CHUNK = 1024 * 1024
 
 
 # ---------------------------- 模型管理 ----------------------------
-
 def _restore_model_registry() -> None:
     """启动时从模型目录恢复注册表。
-
     注册表存于内存，后端重启即丢失；模型文件本身持久化在 MODELS_DIR。
     上传时落盘 {model_id}.json 清单（记录原始文件名），此处连同无清单的
     孤儿模型文件一并恢复注册，避免后端重启后已上传模型"消失"。
@@ -80,9 +74,8 @@ async def upload_model(file: UploadFile = File(...)):
     with open(dest, "wb") as f:
         while chunk := await file.read(_CHUNK):
             f.write(chunk)
-
     url = f"/static/models/{dest.name}"
-    # 推断 OBJ 模型的 up 轴（Y-up 需在 HELIOS++ 与前端一致地旋转到 Z-up）
+    # 推断 OBJ 模型的 up 轴（Y‑up 需在 HELIOS++ 与前端一致地旋转到 Z‑up）
     up = config_generator.detect_up_axis(str(dest)) if ext == ".obj" else "z"
     MODEL_REGISTRY[model_id] = {
         "filename": file.filename or dest.name,
@@ -118,7 +111,6 @@ async def delete_model(model_id: str):
 
 
 # ---------------------------- 航迹管理 ----------------------------
-
 @router.post("/trajectory/generate")
 async def generate_trajectory(req: TrajectoryRequest):
     if not req.waypoints:
@@ -150,7 +142,6 @@ async def download_trajectory(file_id: str):
 
 
 # ---------------------------- 配置管理 ----------------------------
-
 @router.post("/config/generate")
 async def generate_config(req: ConfigRequest):
     config_id = config_generator.store_config(req.model_dump())
@@ -161,20 +152,17 @@ async def generate_config(req: ConfigRequest):
 
 
 # ---------------------------- 仿真执行 ----------------------------
-
 @router.post("/simulation/run")
 async def run_simulation(req: SimulationRunRequest):
     # 1. 校验航迹
     traj_path = TRAJECTORIES_DIR / f"{req.trajectory_id}.trj"
     if not traj_path.exists():
         raise HTTPException(404, f"航迹不存在：{req.trajectory_id}")
-
     # 2. 校验配置
     try:
         params = config_generator.get_config(req.config_id)
     except KeyError:
         raise HTTPException(404, f"配置不存在：{req.config_id}")
-
     # 3. 校验模型（可选）
     model_path = None
     model_up = "z"
@@ -186,7 +174,6 @@ async def run_simulation(req: SimulationRunRequest):
             raise HTTPException(400, "仅 OBJ 格式模型可参与 HELIOS++ 仿真（GLTF/STL 仅用于三维展示）")
         model_path = m["path"]
         model_up = m.get("up", "z")
-
     # 4. 生成 scene + survey XML
     scene_xml, scene_id = config_generator.generate_scene_xml(model_path, up=model_up)
     survey_xml = config_generator.generate_survey_xml(
@@ -195,12 +182,10 @@ async def run_simulation(req: SimulationRunRequest):
         traj_path=str(traj_path),
         params=params,
     )
-
     # 5. 构造任务并入队（由队列调度器决定何时执行）
     output_dir = RESULTS_DIR / f"sim_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}"
     output_dir.mkdir(parents=True, exist_ok=True)
     output_format = params.get("output_format", "LAS")
-
     task = helios_service.SimulationTask(
         helios_service.new_task_id(),
         str(survey_xml),
@@ -246,7 +231,6 @@ async def cancel_simulation(task_id: str):
 
 
 # ---------------------------- 结果管理 ----------------------------
-
 @router.get("/results/{task_id}")
 async def get_result(task_id: str):
     task = helios_service.get_task(task_id)
@@ -254,7 +238,6 @@ async def get_result(task_id: str):
         raise HTTPException(404, f"任务不存在：{task_id}")
     if task.status != "completed" or not task.result_file:
         raise HTTPException(409, f"任务尚未完成或未产生结果（当前状态：{task.status}）")
-
     parsed = pointcloud_parser.parse(task.result_file)
     return {
         "file_path": parsed["file_path"],
@@ -274,11 +257,17 @@ async def download_result(task_id: str, format: str = "las"):
     if not task.result_file:
         raise HTTPException(409, f"任务尚未产生结果（当前状态：{task.status}）")
     p = Path(task.result_file)
-    return FileResponse(str(p), filename=p.name, media_type="application/octet-stream")
+    return FileResponse(str(p), filename=p.name, media_type="application/octet‑stream")
+
+
+# ---------------------------- 环境诊断 ----------------------------
+@router.get("/env/diagnose")
+async def diagnose_env():
+    """检测 HELIOS++ 运行环境：可执行文件、资源目录完整性、静态工作目录。"""
+    return await env_service.diagnose_all()
 
 
 # ---------------------------- 缓存管理 ----------------------------
-
 CACHE_DIRS = {
     "models": MODELS_DIR,
     "trajectories": TRAJECTORIES_DIR,
