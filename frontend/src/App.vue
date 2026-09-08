@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useSceneStore } from './stores/scene'
 import { useWaypointStore } from './stores/waypoints'
 import { useSimulationStore } from './stores/simulation'
-import { useHeliosAPI, connectLogWS } from './composables/useHeliosAPI'
+import { useHeliosAPI, connectQueueWS } from './composables/useHeliosAPI'
 import { useThreeScene } from './composables/useThreeScene'
 import { generateBowtie } from './composables/useBowtie'
 import { getParams } from './composables/scannerSpecs'
@@ -14,6 +14,7 @@ import PointCloudPanel from './components/PointCloudPanel.vue'
 import ModelList from './components/ModelList.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import LogConsole from './components/LogConsole.vue'
+import TaskQueuePanel from './components/TaskQueuePanel.vue'
 
 const sceneStore = useSceneStore()
 const waypointStore = useWaypointStore()
@@ -64,9 +65,11 @@ function startConsoleResize(e) {
 
 const statusText = {
   idle: '就绪',
+  queued: '排队中',
   running: '仿真中',
   completed: '已完成',
   failed: '失败',
+  cancelled: '已取消',
 }
 
 // 模型上传
@@ -124,12 +127,8 @@ function startBowtie() {
   simStore.addLog('INFO', '请点击两个角点定义矩形区域')
 }
 
-// 执行仿真
+// 执行仿真（提交任务入队）
 async function runSimulation() {
-  if (simStore.status === 'running') {
-    simStore.addLog('WARNING', '已有仿真任务正在运行')
-    return
-  }
   const minAlt = getParams(simStore.params.platform_type).scanner.params.rangeMin.default
   if (simStore.params.altitude < minAlt) {
     simStore.addLog('ERROR', `飞行高度 ${simStore.params.altitude}m 低于 ${simStore.params.platform_type} 平台最小测程 ${minAlt}m，请调高航高或改用 UAV 平台`)
@@ -165,26 +164,27 @@ async function runSimulation() {
       config_id: cfg.config_id,
       scene_model_id: sceneStore.activeModelId || null,
     })
-    simStore.taskId = run.task_id
-    simStore.status = 'running'
-    simStore.addLog('INFO', `仿真任务已启动：${run.task_id}`)
-
-    connectLogWS(run.task_id, {
-      onOpen: () => simStore.addLog('INFO', '日志通道已连接'),
-      onMessage: (msg) => handleWSMessage(msg),
-      onError: () => simStore.addLog('ERROR', '日志通道连接出错'),
+    simStore.upsertTask({
+      task_id: run.task_id,
+      status: run.status || 'queued',
+      progress: 0,
+      message: '',
+      output_format: simStore.params.output_format,
+      submitted_at: Date.now() / 1000,
     })
+    simStore.selectTask(run.task_id)
+    simStore.addLog('INFO', `仿真任务已提交：${run.task_id}（${run.status === 'queued' ? '排队中' : run.status}）`)
   } catch (err) {
-    simStore.status = 'failed'
     simStore.addLog('ERROR', '仿真启动失败：' + (err.response?.data?.detail || err.message))
   }
 }
 
 async function cancelSimulation() {
+  const taskId = simStore.selectedTaskId
+  if (!taskId) return
   try {
-    await api.cancelSimulation(simStore.taskId)
-    simStore.status = 'failed'
-    simStore.addLog('INFO', '仿真已取消')
+    await api.cancelSimulation(taskId)
+    simStore.addLog('INFO', '已发送取消请求')
   } catch (err) {
     simStore.addLog('ERROR', '取消失败：' + (err.response?.data?.detail || err.message))
   }
@@ -199,29 +199,83 @@ function downloadPointCloud() {
   a.click()
 }
 
-async function handleWSMessage(msg) {
-  if (msg.type === 'log') {
-    simStore.addLog(msg.level, msg.message)
-  } else if (msg.type === 'progress') {
-    simStore.progress = msg.percent
-  } else if (msg.type === 'complete') {
-    simStore.status = 'completed'
-    simStore.progress = 100
-    simStore.addLog('INFO', '仿真完成，正在加载结果...')
-    await loadResult()
-  } else if (msg.type === 'error') {
-    simStore.status = 'failed'
-    simStore.addLog('ERROR', msg.message)
+function handleQueueMessage(msg) {
+  simStore.handleQueueEvent(msg)
+  if (msg.type === 'complete' && msg.task_id) {
+    loadResult(msg.task_id)
   }
 }
 
-async function loadResult() {
+async function loadResult(taskId) {
   try {
-    const res = await api.getResult(simStore.taskId)
-    simStore.result = res
-    simStore.addLog('INFO', `点云加载完成：${res.point_count} 个点`)
+    const res = await api.getResult(taskId)
+    const t = simStore.tasks[taskId]
+    if (t) t.result = res
+    if (simStore.selectedTaskId === taskId) simStore.result = res
+    simStore.addTaskLog(taskId, 'INFO', `点云加载完成：${res.point_count} 个点`)
   } catch (err) {
-    simStore.addLog('ERROR', '结果加载失败：' + (err.response?.data?.detail || err.message))
+    simStore.addTaskLog(taskId, 'ERROR', '结果加载失败：' + (err.response?.data?.detail || err.message))
+  }
+}
+
+let queueWs = null
+let queueReconnectTimer = null
+let queueReconnectAttempts = 0
+
+function connectQueue() {
+  queueWs = connectQueueWS({
+    onOpen: () => {
+      queueReconnectAttempts = 0
+      simStore.addLog('INFO', '任务队列通道已连接')
+    },
+    onMessage: (msg) => handleQueueMessage(msg),
+    onClose: () => scheduleQueueReconnect(),
+    onError: () => simStore.addLog('WARNING', '任务队列通道连接出错，尝试重连...'),
+  })
+}
+
+// 指数退避自动重连（后端重启 / 网络抖动时保证状态不永久失联）
+function scheduleQueueReconnect() {
+  if (queueReconnectTimer) return
+  const delay = Math.min(1000 * 2 ** queueReconnectAttempts, 15000)
+  queueReconnectAttempts += 1
+  queueReconnectTimer = setTimeout(() => {
+    queueReconnectTimer = null
+    connectQueue()
+  }, delay)
+}
+
+onMounted(() => {
+  connectQueue()
+  startQueuePolling()
+})
+onUnmounted(() => {
+  if (queueReconnectTimer) clearTimeout(queueReconnectTimer)
+  if (queueWs) queueWs.close()
+  stopQueuePolling()
+})
+
+// ---- 轮询兜底：即使 /ws/queue 不可用，也每 2s 拉一次后端队列快照同步状态/进度 ----
+let queuePollTimer = null
+
+function startQueuePolling() {
+  if (queuePollTimer) return
+  const tick = async () => {
+    try {
+      const snap = await api.getQueue()
+      simStore.applySnapshot(snap)
+    } catch (err) {
+      // 后端暂不可用时静默，等下一次轮询
+    }
+  }
+  queuePollTimer = setInterval(tick, 2000)
+  tick()
+}
+
+function stopQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer)
+    queuePollTimer = null
   }
 }
 </script>
@@ -241,8 +295,12 @@ async function loadResult() {
         />
         <button class="btn" @click="onPickModel">模型上传</button>
         <button class="btn" @click="exportTrajectory">导出航迹</button>
-        <button class="btn btn-primary" @click="runSimulation" v-if="simStore.status !== 'running'">执行仿真</button>
-        <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
+        <button class="btn btn-primary" @click="runSimulation">执行仿真</button>
+        <button
+          class="btn btn-danger"
+          @click="cancelSimulation"
+          v-if="simStore.selectedTask && (simStore.selectedTask.status === 'queued' || simStore.selectedTask.status === 'running')"
+        >取消</button>
         <span class="status-badge" :class="'status-' + simStore.status">
           {{ statusText[simStore.status] || simStore.status }}
           <template v-if="simStore.status === 'running'"> {{ simStore.progress }}%</template>
@@ -258,12 +316,14 @@ async function loadResult() {
       <aside class="sidebar" :style="{ width: sidebarWidth + 'px' }">
         <div class="tabs">
           <button :class="{ active: activeTab === 'params' }" @click="activeTab = 'params'">仿真参数</button>
+          <button :class="{ active: activeTab === 'queue' }" @click="activeTab = 'queue'">任务队列</button>
           <button :class="{ active: activeTab === 'pointcloud' }" @click="activeTab = 'pointcloud'">点云</button>
           <button :class="{ active: activeTab === 'models' }" @click="activeTab = 'models'">模型列表</button>
           <button :class="{ active: activeTab === 'trajectory' }" @click="activeTab = 'trajectory'">航迹</button>
           <button :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">设置</button>
         </div>
         <ControlPanel v-if="activeTab === 'params'" />
+        <TaskQueuePanel v-if="activeTab === 'queue'" />
         <PointCloudPanel v-if="activeTab === 'pointcloud'" />
         <ModelList v-if="activeTab === 'models'" />
         <template v-if="activeTab === 'trajectory'">
