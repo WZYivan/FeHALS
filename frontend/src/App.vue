@@ -202,10 +202,9 @@ async function runSimulation() {
   }
 }
 
-// 多任务模式下：添加当前配置到队列（从工具栏触发）
-function addToQueueFromToolbar() {
-  activeTab.value = 'tasks'
-  simStore.addLog('INFO', '请在「任务队列」面板中点击「添加当前配置到队列」')
+// 多任务模式下：一键将当前仿真配置加入队列（从工具栏触发）
+async function addToQueueFromToolbar() {
+  await taskStore.submitCurrentConfig()
 }
 
 async function cancelSimulation() {
@@ -274,7 +273,7 @@ function onSwitchTab(tab) {
               <button class="btn" @click="onPickModel">模型上传</button>
               <button class="btn" @click="exportTrajectory">导出航迹</button>
               <!-- 多任务启用时，主按钮变为"添加到队列"；否则保持原有"执行仿真" -->
-              <button class="btn btn-primary" @click="addToQueueFromToolbar" v-if="taskStore.enabled && simStore.status !== 'running'">添加到队列</button>
+              <button class="btn btn-primary" :disabled="taskStore.submitting" @click="addToQueueFromToolbar" v-if="taskStore.enabled && simStore.status !== 'running'">{{ taskStore.submitting ? '提交中...' : '添加到队列' }}</button>
               <button class="btn btn-primary" @click="runSimulation" v-if="!taskStore.enabled && simStore.status !== 'running'">执行仿真</button>
               <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
               <span class="status-badge" :class="'status-' + simStore.status">
