@@ -1,6 +1,7 @@
 """REST API 路由。
 
 模型 / 航迹 / 配置 / 仿真 / 结果 / 缓存 六类资源。
+多任务调度器：/api/scheduler + /api/tasks（新增，不影响原有单任务流程）。
 """
 import json
 import numpy as np
@@ -14,9 +15,12 @@ from fastapi.responses import FileResponse
 
 from app.config import CONFIGS_DIR, MODELS_DIR, RESULTS_DIR, TRAJECTORIES_DIR
 from app.models.schemas import (
+    BatchTaskSubmitRequest,
     ConfigRequest,
     CoverageRequest,
+    SchedulerConfigUpdate,
     SimulationRunRequest,
+    TaskSubmitRequest,
     TrajectoryRequest,
 )
 from app.services import (
@@ -26,6 +30,7 @@ from app.services import (
     pointcloud_parser,
     trajectory_generator,
 )
+from app.services.task_scheduler import get_scheduler
 from ..services.coverage import CoverageAnalyzer
 router = APIRouter(prefix="/api")
 
@@ -337,3 +342,153 @@ async def analyze_coverage(request: CoverageRequest):
         return analyzer.analyze(points)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 多任务调度器（新增，不影响原有单任务流程） ====================
+
+def _prepare_simulation(req: TaskSubmitRequest) -> dict:
+    """仿真任务提交前的准备工作：校验航迹/配置/模型，生成 scene+survey XML 和输出目录。
+
+    与 /simulation/run 的准备逻辑一致，但不启动仿真，返回启动所需参数供调度器使用。
+    """
+    # 1. 校验航迹
+    traj_path = TRAJECTORIES_DIR / f"{req.trajectory_id}.trj"
+    if not traj_path.exists():
+        raise HTTPException(404, f"航迹不存在：{req.trajectory_id}")
+
+    # 2. 校验配置
+    try:
+        params = config_generator.get_config(req.config_id)
+    except KeyError:
+        raise HTTPException(404, f"配置不存在：{req.config_id}")
+
+    # 3. 校验模型（可选）
+    model_entries: list[tuple[str, str]] = []
+    if req.scene_model_ids:
+        for mid in req.scene_model_ids:
+            m = MODEL_REGISTRY.get(mid)
+            if not m:
+                raise HTTPException(404, f"模型不存在：{mid}")
+            if m["ext"] != ".obj":
+                raise HTTPException(400, f"模型「{m['filename']}」不是 OBJ 格式（仅 OBJ 可参与 HELIOS++ 仿真）")
+            model_entries.append((m["path"], m.get("up", "z")))
+
+    # 4. 生成 scene + survey XML
+    scene_xml, scene_id = config_generator.generate_scene_xml(model_entries if model_entries else None)
+    survey_xml = config_generator.generate_survey_xml(
+        scene_xml_path=str(scene_xml),
+        scene_id=scene_id,
+        traj_path=str(traj_path),
+        params=params,
+    )
+
+    # 5. 创建输出目录（不启动仿真）
+    output_dir = RESULTS_DIR / f"sim_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_format = params.get("output_format", "LAS")
+
+    return {
+        "survey_path": str(survey_xml),
+        "output_dir": str(output_dir),
+        "output_format": output_format,
+    }
+
+
+@router.get("/scheduler")
+async def get_scheduler_config():
+    """获取调度器配置及运行统计。"""
+    return get_scheduler().get_config()
+
+
+@router.put("/scheduler")
+async def update_scheduler_config(req: SchedulerConfigUpdate):
+    """更新调度器配置（enabled / mode / max_concurrent）。
+
+    enabled=False 时调度器完全不介入，原有单任务流程不受影响。
+    """
+    try:
+        return get_scheduler().set_config(
+            enabled=req.enabled,
+            mode=req.mode,
+            max_concurrent=req.max_concurrent,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/tasks")
+async def list_scheduler_tasks():
+    """列出调度器管理的所有任务（含排队中、运行中、已完成、失败）。"""
+    return {"tasks": get_scheduler().list_tasks()}
+
+
+@router.post("/tasks")
+async def submit_task(req: TaskSubmitRequest):
+    """提交单个仿真任务到调度器。
+
+    若调度器未启用（enabled=False），返回 409 提示先启用调度器或使用 /simulation/run。
+    """
+    scheduler = get_scheduler()
+    if not scheduler.config.enabled:
+        raise HTTPException(409, "多任务调度器未启用。请先启用调度器，或使用 /api/simulation/run 执行单任务。")
+
+    prepared = _prepare_simulation(req)
+    try:
+        st = await scheduler.submit(
+            survey_path=prepared["survey_path"],
+            output_dir=prepared["output_dir"],
+            output_format=prepared["output_format"],
+            name=req.name,
+        )
+    except RuntimeError as e:
+        raise HTTPException(409, str(e))
+    return st.to_dict()
+
+
+@router.post("/tasks/batch")
+async def submit_batch_tasks(req: BatchTaskSubmitRequest):
+    """批量提交仿真任务到调度器。逐个准备并提交，返回每个任务的结果。"""
+    scheduler = get_scheduler()
+    if not scheduler.config.enabled:
+        raise HTTPException(409, "多任务调度器未启用。请先启用调度器，或使用 /api/simulation/run 执行单任务。")
+
+    results = []
+    for i, task_req in enumerate(req.tasks):
+        try:
+            prepared = _prepare_simulation(task_req)
+            st = await scheduler.submit(
+                survey_path=prepared["survey_path"],
+                output_dir=prepared["output_dir"],
+                output_format=prepared["output_format"],
+                name=task_req.name or f"批量任务-{i + 1}",
+            )
+            results.append({"success": True, "task": st.to_dict()})
+        except (HTTPException, RuntimeError) as e:
+            detail = e.detail if isinstance(e, HTTPException) else str(e)
+            results.append({"success": False, "error": detail, "name": task_req.name or f"批量任务-{i + 1}"})
+    return {"results": results}
+
+
+@router.delete("/tasks/{task_id}")
+async def remove_scheduler_task(task_id: str):
+    """从调度器列表中移除一个已结束（completed/failed/cancelled）的任务。"""
+    ok = get_scheduler().remove_task(task_id)
+    if not ok:
+        raise HTTPException(409, "任务不存在或尚未结束（排队中/运行中的任务需先取消）")
+    return {"success": True}
+
+
+@router.post("/tasks/clear")
+async def clear_completed_tasks():
+    """清除所有已结束（completed/failed/cancelled）的任务。"""
+    removed = get_scheduler().clear_completed()
+    return {"success": True, "removed": removed}
+
+
+@router.post("/tasks/{task_id}/cancel")
+async def cancel_scheduler_task(task_id: str):
+    """取消一个排队中或运行中的调度器任务。"""
+    ok = await get_scheduler().cancel_task(task_id)
+    if not ok:
+        raise HTTPException(404, f"任务不存在或无法取消：{task_id}")
+    return {"success": True}
