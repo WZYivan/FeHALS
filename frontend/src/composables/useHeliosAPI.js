@@ -56,6 +56,16 @@ export function useHeliosAPI() {
   // ---- 环境诊断 ----
   const diagnoseEnv = () => api.get('/env/diagnose').then((r) => r.data)
 
+  // ---- 多任务调度器 ----
+  const getScheduler = () => api.get('/scheduler').then((r) => r.data)
+  const updateScheduler = (payload) => api.put('/scheduler', payload).then((r) => r.data)
+  const listTasks = () => api.get('/tasks').then((r) => r.data)
+  const submitTask = (payload) => api.post('/tasks', payload).then((r) => r.data)
+  const submitBatchTasks = (tasks) => api.post('/tasks/batch', { tasks }).then((r) => r.data)
+  const removeTask = (id) => api.delete(`/tasks/${id}`).then((r) => r.data)
+  const clearTasks = () => api.post('/tasks/clear').then((r) => r.data)
+  const cancelTask = (id) => api.post(`/tasks/${id}/cancel`).then((r) => r.data)
+
   return {
     uploadModel,
     uploadModels,
@@ -73,6 +83,14 @@ export function useHeliosAPI() {
     listCache,
     clearCache,
     diagnoseEnv,
+    getScheduler,
+    updateScheduler,
+    listTasks,
+    submitTask,
+    submitBatchTasks,
+    removeTask,
+    clearTasks,
+    cancelTask,
   }
 }
 
