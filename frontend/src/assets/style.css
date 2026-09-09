@@ -832,6 +832,281 @@ body,
   color: #6b7280;
 }
 
+/* ---------- 多任务调度面板 ---------- */
+
+.task-queue-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #d1d5db;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #2563eb;
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(16px);
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.task-queue-hint {
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.task-queue-hint p {
+  margin: 0 0 4px;
+}
+
+.task-queue-hint .hint-sub {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.scheduler-config {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.scheduler-config .field {
+  flex: 1;
+}
+
+.scheduler-config .field label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.scheduler-config select,
+.scheduler-config input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.task-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stat-queued { background: #fef3c7; color: #92400e; }
+.stat-running { background: #dbeafe; color: #1e40af; }
+.stat-completed { background: #d1fae5; color: #065f46; }
+.stat-failed { background: #fee2e2; color: #991b1b; }
+
+.task-queue-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.task-list-empty {
+  padding: 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.task-item {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-item.task-running {
+  border-color: #93c5fd;
+  background: #f0f7ff;
+}
+
+.task-item.task-queued {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.task-item.task-completed {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+.task-item.task-failed,
+.task-item.task-cancelled {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.task-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.task-status-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.task-item-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.task-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.task-progress-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 32px;
+  text-align: right;
+}
+
+.task-message {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.task-message.msg-failed,
+.task-message.msg-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.task-message.msg-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.task-item-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.scheduler-badge {
+  padding: 3px 10px;
+  background: rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  border-radius: 12px;
+  font-size: 11px;
+  color: #93c5fd;
+  white-space: nowrap;
+}
+
 /* ---------- 仿真动画 ---------- */
 .anim-btn-row {
   display: flex;

@@ -18,6 +18,13 @@ if not defined BACKEND_PORT  set "BACKEND_PORT=8000"
 if not defined FRONTEND_PORT set "FRONTEND_PORT=5173"
 rem CONDA_ENV 留空时后端用系统 Python 3.9（py -3.9）；如需 conda 环境，在此处填名字
 if not defined CONDA_ENV     set "CONDA_ENV="
+rem HELIOS++ conda 环境根目录，用于自动检测 helios++.exe 并设置环境变量。
+rem 若已通过系统环境变量设置 HELIOS_PATH，则不覆盖；此处仅用于自动检测。
+rem 也可通过 set HELIOS_PREFIX=你的conda环境路径 来覆盖默认检测路径。
+if not defined HELIOS_PREFIX  set "HELIOS_PREFIX=%USERPROFILE%\helios"
+rem Windows 上关闭 uvicorn reload 模式：reloader 子进程会与 asyncio 子进程
+rem 创建冲突，导致 helios++ 仿真进程挂起、进度永远 0%。Linux 默认开启。
+if not defined FEHALS_RELOAD  set "FEHALS_RELOAD=false"
 
 set "ACTION=%~1"
 if "%ACTION%"=="" set "ACTION=start"
@@ -42,6 +49,9 @@ if errorlevel 1 (
   echo [ERROR] Port %FRONTEND_PORT% is in use, run "run.bat stop" first.
   exit /b 1
 )
+
+rem 设置 HELIOS++ Windows 环境变量（覆盖 config.py 中的 Linux 默认路径）
+call :setup_helios_env
 
 call :check_env
 
@@ -95,6 +105,30 @@ if errorlevel 1 (
 ) else (
   echo Frontend: stopped
 )
+exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem HELIOS++ 环境变量自动检测与设置（Windows）
+rem
+rem 若 HELIOS_PATH 已通过系统环境变量设置，则不覆盖，直接返回。
+rem 否则从 HELIOS_PREFIX（默认 %USERPROFILE%\helios）下的 conda 环境中
+rem 自动检测 helios++.exe，设置 HELIOS_PATH、HELIOS_ASSETS，并将 conda
+rem 的 bin 目录加入 PATH 以供 helios++.exe 加载运行时 DLL。
+rem
+rem config.py 中的默认路径保持为 Linux 路径，此处仅通过环境变量覆盖。
+:setup_helios_env
+if defined HELIOS_PATH exit /b 0
+if not exist "%HELIOS_PREFIX%\Lib\site-packages\pyhelios\bin\helios++.exe" (
+  echo [HELIOS] 未在 %HELIOS_PREFIX% 找到 helios++.exe，仿真功能不可用
+  echo          可通过 set HELIOS_PREFIX=你的conda环境路径 来指定位置
+  exit /b 0
+)
+set "HELIOS_PATH=%HELIOS_PREFIX%\Lib\site-packages\pyhelios\bin\helios++.exe"
+set "HELIOS_ASSETS=%HELIOS_PREFIX%\Lib\site-packages\pyhelios"
+rem helios++.exe 运行所需 DLL 路径（conda 环境的 bin 目录）
+set "PATH=%HELIOS_PREFIX%;%HELIOS_PREFIX%\Library\mingw-w64\bin;%HELIOS_PREFIX%\Library\usr\bin;%HELIOS_PREFIX%\Library\bin;%HELIOS_PREFIX%\Scripts;%HELIOS_PREFIX%\bin;%PATH%"
+echo [HELIOS] HELIOS_PATH=%HELIOS_PATH%
+echo [HELIOS] HELIOS_ASSETS=%HELIOS_ASSETS%
 exit /b 0
 
 rem ---------------------------------------------------------------------------
