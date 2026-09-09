@@ -48,3 +48,28 @@ class SimulationStatus(BaseModel):
     progress: int = 0
     message: str = ""
     result_file: Optional[str] = None
+
+
+# ==================== 多任务调度器 ====================
+
+class SchedulerConfigUpdate(BaseModel):
+    """调度器配置更新请求。所有字段可选，仅更新传入的字段。"""
+
+    enabled: Optional[bool] = None
+    mode: Optional[str] = None  # single | sequential | concurrent
+    max_concurrent: Optional[int] = None
+
+
+class TaskSubmitRequest(BaseModel):
+    """提交单个任务到调度器的请求。"""
+
+    trajectory_id: str
+    config_id: str
+    scene_model_ids: Optional[List[str]] = None
+    name: Optional[str] = None  # 任务显示名称，不传则自动生成
+
+
+class BatchTaskSubmitRequest(BaseModel):
+    """批量提交任务到调度器的请求。"""
+
+    tasks: List[TaskSubmitRequest]
