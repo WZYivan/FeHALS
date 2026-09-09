@@ -58,6 +58,35 @@ def run_simulation(
     return task
 
 
+def create_task(
+    survey_path: str,
+    output_dir: str,
+    output_format: str = "LAS",
+    task_id: Optional[str] = None,
+) -> SimulationTask:
+    """创建并注册一个仿真任务，但不启动执行。
+
+    供任务调度器在入队时预创建任务，待调度到执行槽位后再调用 start_task 启动。
+    task_id 可由调用方指定，便于调度器在任务启动前即持有稳定 ID；
+    不传则自动生成。任务创建后即注册到 TASKS，原有 status/logs/cancel 等接口可直接使用。
+    """
+    tid = task_id or _new_task_id()
+    task = SimulationTask(tid, survey_path, output_dir, output_format)
+    TASKS[tid] = task
+    return task
+
+
+def start_task(task_id: str, assets: Optional[list] = None) -> Optional[SimulationTask]:
+    """启动一个此前由 create_task 创建的任务。若任务已在运行则直接返回。"""
+    task = TASKS.get(task_id)
+    if task is None:
+        return None
+    if task.status != "pending":
+        return task
+    asyncio.create_task(_run(task, assets or HELIOS_ASSETS))
+    return task
+
+
 def get_task(task_id: str) -> Optional[SimulationTask]:
     return TASKS.get(task_id)
 
