@@ -1,21 +1,14 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useTaskQueueStore } from '../stores/taskQueue'
 import { useSimulationStore } from '../stores/simulation'
-import { useSceneStore } from '../stores/scene'
-import { useWaypointStore } from '../stores/waypoints'
 import { useHeliosAPI } from '../composables/useHeliosAPI'
-import { getParams } from '../composables/scannerSpecs'
 
 const emit = defineEmits(['view-task', 'switch-tab'])
 
 const taskStore = useTaskQueueStore()
 const simStore = useSimulationStore()
-const sceneStore = useSceneStore()
-const waypointStore = useWaypointStore()
 const api = useHeliosAPI()
-
-const submitting = ref(false)
 
 const modeLabels = {
   single: '单任务阻塞',
@@ -83,52 +76,7 @@ async function onMaxConcurrentChange(e) {
 }
 
 async function addCurrentToQueue() {
-  if (submitting.value) return
-  // 参数校验（与单任务 runSimulation 一致）
-  const minAlt = getParams(simStore.params.platform_type).scanner.params.rangeMin.default
-  if (simStore.params.altitude < minAlt) {
-    simStore.addLog('ERROR', `飞行高度 ${simStore.params.altitude}m 低于最小测程 ${minAlt}m`)
-    return
-  }
-  if (!waypointStore.count) {
-    simStore.addLog('WARNING', '航点数量为 0，请先添加航点')
-    return
-  }
-  const specs = getParams(simStore.params.platform_type)
-  const allSpecs = { ...specs.platform.params, ...specs.scanner.params }
-  for (const [key, spec] of Object.entries(allSpecs)) {
-    if (spec.readonly) continue
-    const val = simStore.params[key]
-    if (val < spec.min || val > spec.max) {
-      simStore.addLog('ERROR', `${spec.label} 值 ${val} 超出有效范围 [${spec.min}, ${spec.max}]`)
-      return
-    }
-  }
-
-  submitting.value = true
-  try {
-    // 生成航迹
-    const traj = await api.generateTrajectory(waypointStore.points, simStore.params.altitude)
-    simStore.addLog('INFO', `航迹生成完成：${traj.file_id}`)
-    // 生成配置
-    const cfg = await api.generateConfig(simStore.params)
-    simStore.addLog('INFO', `配置生成完成：${cfg.config_id}`)
-    // 提交到调度器
-    const objModelIds = sceneStore.models
-      .filter((m) => /\.obj$/i.test(m.name))
-      .map((m) => m.id)
-    const task = await taskStore.submitTask({
-      trajectory_id: traj.file_id,
-      config_id: cfg.config_id,
-      scene_model_ids: objModelIds.length ? objModelIds : null,
-      name: `${simStore.params.platform_type}-航高${simStore.params.altitude}m`,
-    })
-    simStore.addLog('INFO', `任务已加入队列：${task.name}（${task.task_id}）`)
-  } catch (err) {
-    simStore.addLog('ERROR', '加入队列失败：' + (err.response?.data?.detail || err.message))
-  } finally {
-    submitting.value = false
-  }
+  await taskStore.submitCurrentConfig()
 }
 
 async function onCancel(taskId) {
@@ -224,8 +172,8 @@ onUnmounted(() => {
 
       <!-- 操作按钮 -->
       <div class="task-queue-actions">
-        <button class="btn btn-primary btn-sm" :disabled="submitting" @click="addCurrentToQueue">
-          {{ submitting ? '提交中...' : '添加当前配置到队列' }}
+        <button class="btn btn-primary btn-sm" :disabled="taskStore.submitting" @click="addCurrentToQueue">
+          {{ taskStore.submitting ? '提交中...' : '添加当前配置到队列' }}
         </button>
         <button class="btn btn-sm" @click="onClearCompleted">清空已结束</button>
       </div>
