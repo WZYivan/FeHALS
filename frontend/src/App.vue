@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useSceneStore } from './stores/scene'
 import { useWaypointStore } from './stores/waypoints'
 import { useSimulationStore } from './stores/simulation'
+import { useTaskQueueStore } from './stores/taskQueue'
 import { useHeliosAPI, connectLogWS } from './composables/useHeliosAPI'
 import { useThreeScene } from './composables/useThreeScene'
 import { generateBowtie } from './composables/useBowtie'
@@ -15,11 +16,13 @@ import ModelList from './components/ModelList.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import LogConsole from './components/LogConsole.vue'
 import CoverageHeatmap from './components/CoverageHeatmap.vue'
+import TaskQueuePanel from './components/TaskQueuePanel.vue'
 
 
 const sceneStore = useSceneStore()
 const waypointStore = useWaypointStore()
 const simStore = useSimulationStore()
+const taskStore = useTaskQueueStore()
 const api = useHeliosAPI()
 const three = useThreeScene()
 
@@ -141,7 +144,7 @@ function startBowtie() {
   simStore.addLog('INFO', '请点击两个角点定义矩形区域')
 }
 
-// 执行仿真
+// 执行仿真（单任务模式）
 async function runSimulation() {
   if (simStore.status === 'running') {
     simStore.addLog('WARNING', '已有仿真任务正在运行')
@@ -199,6 +202,12 @@ async function runSimulation() {
   }
 }
 
+// 多任务模式下：添加当前配置到队列（从工具栏触发）
+function addToQueueFromToolbar() {
+  activeTab.value = 'tasks'
+  simStore.addLog('INFO', '请在「任务队列」面板中点击「添加当前配置到队列」')
+}
+
 async function cancelSimulation() {
   try {
     await api.cancelSimulation(simStore.taskId)
@@ -243,6 +252,11 @@ async function loadResult() {
     simStore.addLog('ERROR', '结果加载失败：' + (err.response?.data?.detail || err.message))
   }
 }
+
+// 任务队列面板请求切换 tab
+function onSwitchTab(tab) {
+  activeTab.value = tab
+}
 </script>
 
 <template>
@@ -259,13 +273,19 @@ async function loadResult() {
                      @change="onFileChange" />
               <button class="btn" @click="onPickModel">模型上传</button>
               <button class="btn" @click="exportTrajectory">导出航迹</button>
-              <button class="btn btn-primary" @click="runSimulation" v-if="simStore.status !== 'running'">执行仿真</button>
+              <!-- 多任务启用时，主按钮变为"添加到队列"；否则保持原有"执行仿真" -->
+              <button class="btn btn-primary" @click="addToQueueFromToolbar" v-if="taskStore.enabled && simStore.status !== 'running'">添加到队列</button>
+              <button class="btn btn-primary" @click="runSimulation" v-if="!taskStore.enabled && simStore.status !== 'running'">执行仿真</button>
               <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
               <span class="status-badge" :class="'status-' + simStore.status">
                   {{ statusText[simStore.status] || simStore.status }}
                   <template v-if="simStore.status === 'running'">
                       {{ simStore.progress }}%
                   </template>
+              </span>
+              <!-- 多任务启用时显示调度器状态徽章 -->
+              <span v-if="taskStore.enabled" class="scheduler-badge" :title="'调度模式：' + taskStore.mode">
+                  多任务 · 运行{{ taskStore.runningCount }}/排队{{ taskStore.queueSize }}
               </span>
           </div>
       </header>
@@ -281,6 +301,7 @@ async function loadResult() {
           <button :class="{ active: activeTab === 'pointcloud' }" @click="activeTab = 'pointcloud'">点云</button>
           <button :class="{ active: activeTab === 'models' }" @click="activeTab = 'models'">模型列表</button>
           <button :class="{ active: activeTab === 'trajectory' }" @click="activeTab = 'trajectory'">航迹</button>
+          <button :class="{ active: activeTab === 'tasks' }" @click="activeTab = 'tasks'">任务队列</button>
           <button :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">设置</button>
         </div>
         <ControlPanel v-if="activeTab === 'params'" />
@@ -298,6 +319,7 @@ async function loadResult() {
           </section>
           <WaypointList />
         </template>
+        <TaskQueuePanel v-if="activeTab === 'tasks'" @switch-tab="onSwitchTab" />
         <SettingsPanel v-if="activeTab === 'settings'" />
       </aside>
     </div>
