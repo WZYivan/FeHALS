@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useSceneStore } from './stores/scene'
 import { useWaypointStore } from './stores/waypoints'
 import { useSimulationStore } from './stores/simulation'
+import { useTaskQueueStore } from './stores/taskQueue'
 import { useAnimationStore } from './stores/animation'
 import { useScreenshotStore } from './stores/screenshot'
 import { useHeliosAPI, connectLogWS } from './composables/useHeliosAPI'
@@ -18,11 +19,13 @@ import SettingsPanel from './components/SettingsPanel.vue'
 import AnimationPanel from './components/AnimationPanel.vue'
 import LogConsole from './components/LogConsole.vue'
 import CoverageHeatmap from './components/CoverageHeatmap.vue'
+import TaskQueuePanel from './components/TaskQueuePanel.vue'
 
 
 const sceneStore = useSceneStore()
 const waypointStore = useWaypointStore()
 const simStore = useSimulationStore()
+const taskStore = useTaskQueueStore()
 const animStore = useAnimationStore()
 const screenshotStore = useScreenshotStore()
 const api = useHeliosAPI()
@@ -146,7 +149,7 @@ function startBowtie() {
   simStore.addLog('INFO', '请点击两个角点定义矩形区域')
 }
 
-// 执行仿真
+// 执行仿真（单任务模式）
 async function runSimulation() {
   if (simStore.status === 'running') {
     simStore.addLog('WARNING', '已有仿真任务正在运行')
@@ -205,6 +208,11 @@ async function runSimulation() {
   }
 }
 
+// 多任务模式下：一键将当前仿真配置加入队列（从工具栏触发）
+async function addToQueueFromToolbar() {
+  await taskStore.submitCurrentConfig()
+}
+
 async function cancelSimulation() {
   try {
     await api.cancelSimulation(simStore.taskId)
@@ -248,6 +256,11 @@ async function loadResult() {
   } catch (err) {
     simStore.addLog('ERROR', '结果加载失败：' + (err.response?.data?.detail || err.message))
   }
+}
+
+// 任务队列面板请求切换 tab
+function onSwitchTab(tab) {
+  activeTab.value = tab
 }
 
 // 截图功能
@@ -366,6 +379,8 @@ function addParameterOverlay(ctx, params, position, canvasWidth, canvasHeight) {
                      @change="onFileChange" />
               <button class="btn" @click="onPickModel">模型上传</button>
               <button class="btn" @click="exportTrajectory">导出航迹</button>
+              <!-- 多任务启用时，主按钮变为"添加到队列"；否则保持原有"执行仿真" -->
+              <button class="btn btn-primary" :disabled="taskStore.submitting" @click="addToQueueFromToolbar" v-if="taskStore.enabled && simStore.status !== 'running'">{{ taskStore.submitting ? '提交中...' : '添加到队列' }}</button>
               <button class="btn" @click="takeScreenshot">截图</button>
               <button
                 class="btn btn-toggle playback-toggle"
@@ -373,13 +388,17 @@ function addParameterOverlay(ctx, params, position, canvasWidth, canvasHeight) {
                 :title="animStore.enabled ? '关闭仿真回放：隐藏播放条与平台代理' : '开启仿真回放：显示播放条与平台代理'"
                 @click="animStore.enabled = !animStore.enabled"
               >仿真回放</button>
-              <button class="btn btn-primary" @click="runSimulation" v-if="simStore.status !== 'running'">执行仿真</button>
+              <button class="btn btn-primary" @click="runSimulation" v-if="!taskStore.enabled && simStore.status !== 'running'">执行仿真</button>
               <button class="btn btn-danger" @click="cancelSimulation" v-if="simStore.status === 'running'">取消</button>
               <span class="status-badge" :class="'status-' + simStore.status">
                   {{ statusText[simStore.status] || simStore.status }}
                   <template v-if="simStore.status === 'running'">
                       {{ simStore.progress }}%
                   </template>
+              </span>
+              <!-- 多任务启用时显示调度器状态徽章 -->
+              <span v-if="taskStore.enabled" class="scheduler-badge" :title="'调度模式：' + taskStore.mode">
+                  多任务 · 运行{{ taskStore.runningCount }}/排队{{ taskStore.queueSize }}
               </span>
           </div>
       </header>
@@ -395,6 +414,7 @@ function addParameterOverlay(ctx, params, position, canvasWidth, canvasHeight) {
           <button :class="{ active: activeTab === 'pointcloud' }" @click="activeTab = 'pointcloud'">点云</button>
           <button :class="{ active: activeTab === 'models' }" @click="activeTab = 'models'">模型列表</button>
           <button :class="{ active: activeTab === 'trajectory' }" @click="activeTab = 'trajectory'">航迹</button>
+          <button :class="{ active: activeTab === 'tasks' }" @click="activeTab = 'tasks'">任务队列</button>
           <button :class="{ active: activeTab === 'animation' }" @click="activeTab = 'animation'">动画</button>
           <button :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">设置</button>
         </div>
@@ -413,6 +433,7 @@ function addParameterOverlay(ctx, params, position, canvasWidth, canvasHeight) {
           </section>
           <WaypointList />
         </template>
+        <TaskQueuePanel v-if="activeTab === 'tasks'" @switch-tab="onSwitchTab" />
         <AnimationPanel v-if="activeTab === 'animation'" />
         <SettingsPanel v-if="activeTab === 'settings'" />
       </aside>
