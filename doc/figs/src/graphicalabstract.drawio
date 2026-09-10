@@ -7,16 +7,16 @@
                 <mxCell id="title" value="FeHALS" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=42;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
                     <mxGeometry x="60" y="25" width="1320" height="105" as="geometry"/>
                 </mxCell>
-                <mxCell id="input" value="输入&lt;br&gt;三维场景模型&lt;br&gt;航点 / 航线&lt;br&gt;平台与传感器参数" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="input" value="输入&lt;br&gt;三维模型（OBJ / GLTF / GLB / STL）&lt;br&gt;航点 / 弓字形航线 &#183; 平台与扫描器参数" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#2F6FED;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="60" y="180" width="235" height="390" as="geometry"/>
                 </mxCell>
-                <mxCell id="web" value="FeHALS Web 前端&lt;br&gt;Three.js 三维交互&lt;br&gt;图形化参数配置&lt;br&gt;实时日志与任务控制" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="web" value="FeHALS Web 前端&lt;br&gt;Three.js 场景与参数配置&lt;br&gt;实时任务控制 &#183; 平台/点云动画 &#183; 截图" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F7F8;strokeColor=#1FA7B5;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="350" y="180" width="300" height="390" as="geometry"/>
                 </mxCell>
-                <mxCell id="orchestrate" value="自动编排&lt;br&gt;航迹文件 .trj&lt;br&gt;Survey / Scene XML&lt;br&gt;REST + WebSocket" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1EDFF;strokeColor=#7456C8;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="orchestrate" value="自动编排&lt;br&gt;Trajectory.trj &#183; Scene / Survey XML&lt;br&gt;REST + WebSocket &#183; 环境诊断" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1EDFF;strokeColor=#7456C8;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="705" y="180" width="265" height="390" as="geometry"/>
                 </mxCell>
-                <mxCell id="engine" value="HELIOS++ 与输出&lt;br&gt;光线追踪仿真&lt;br&gt;点云解析与降采样&lt;br&gt;高度 / 强度着色及下载" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DC;strokeColor=#D99020;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="engine" value="HELIOS++ 与输出&lt;br&gt;光线追踪仿真&lt;br&gt;流式解析 &#183; 统计/直方图 &#183; 覆盖度热力图" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4DC;strokeColor=#D99020;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=17;spacing=8;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="1025" y="180" width="350" height="390" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="input" target="web" edge="1">
@@ -28,10 +28,10 @@
                 <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#17324D;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="orchestrate" target="engine" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="value" value="一个浏览器入口，完成完整激光扫描仿真&lt;br&gt;降低配置门槛 · 提升航路设计效率 · 让仿真过程可见、结果可查" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#17324D;strokeColor=#17324D;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=18;spacing=8;fontColor=#FFFFFF;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="value" value="一个浏览器入口，完成完整激光扫描仿真&lt;br&gt;降低配置门槛 &#183; 让过程可回放 &#183; 让结果可量化、可截图、可下载" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#17324D;strokeColor=#17324D;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=18;spacing=8;fontColor=#FFFFFF;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="235" y="665" width="970" height="110" as="geometry"/>
                 </mxCell>
-                <mxCell id="feedback" value="结果反馈驱动航路与参数迭代" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F6F0;strokeColor=#29966F;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=15;spacing=8;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="feedback" value="统计、覆盖度与动画反馈驱动航路、航高及扫描器参数迭代" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F6F0;strokeColor=#29966F;strokeWidth=2;fontColor=#17324D;fontFamily=Microsoft YaHei;fontSize=15;spacing=8;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="490" y="815" width="460" height="45" as="geometry"/>
                 </mxCell>
             </root>
