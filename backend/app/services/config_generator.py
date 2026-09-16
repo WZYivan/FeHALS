@@ -43,6 +43,10 @@ GROUND_PLATFORMS = {"vehicle_linearpath"}
 # 转头转速 = 扫描频率(Hz) × 360（deg/s）
 SPINNING_SCANNERS = {"vlp16", "velodyne_hdl-64e"}
 
+# 转镜振荡 + 头部水平摆扫（pan）的地基扫描仪：scanner_id -> 转头转速 (deg/s)
+# RIEGL VZ-400 的 headRotatePerSecMax=60°/s，取 10°/s 与官方示例 tls_toyblocks.xml 一致
+PANNING_SCANNERS = {"riegl_vz400": 10.0}
+
 # 无模型时的默认地面场景（通过 --assets 仓库根目录解析）
 _DEFAULT_GROUNDPLANE = "data/sceneparts/basic/groundplane/groundplane.obj"
 
@@ -225,6 +229,9 @@ def generate_survey_xml(
         scan_freq = 0.0
         scan_angle_total = 1.0
 
+    # 转镜振荡 + 头部水平摆扫的地基扫描仪（如 RIEGL VZ-400）
+    pan_speed = PANNING_SCANNERS.get(scanner_id)  # None 或 deg/s
+
     waypoints = _read_trajectory_waypoints(traj_path)
     traj_dur = _trajectory_duration(traj_path)
 
@@ -238,6 +245,8 @@ def generate_survey_xml(
     )
     if head_rotate:
         scaset += f' headRotatePerSec_deg="{head_rotate:g}"'
+    elif pan_speed:
+        scaset += f' headRotatePerSec_deg="{pan_speed:g}"'
     scaset += "/>\n"
 
     if platform_id in STATIC_PLATFORMS:
@@ -248,8 +257,12 @@ def generate_survey_xml(
             # 360° 旋转 LiDAR：头部转动 1 秒（转速无关）确定扫描时长
             rot_attrs = f' headRotateStart_deg="0.0" headRotateStop_deg="{head_rotate:g}"'
             leg_attrs = ""
+        elif pan_speed:
+            # 转镜 + 头部摆扫（RIEGL VZ-400）：单次 360° 摆扫确定扫描时长
+            rot_attrs = ' headRotateStart_deg="0.0" headRotateStop_deg="360.0"'
+            leg_attrs = ""
         else:
-            # 无头部转动的扫描仪（如 riegl_vz400）：需要 maxDuration_s 限定扫描时长
+            # 无头部转动的扫描仪（如 livox risley）：需要 maxDuration_s 限定扫描时长
             rot_attrs = ""
             leg_attrs = ' maxDuration_s="3.0"'
         leg = (
