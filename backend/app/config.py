@@ -35,7 +35,7 @@ HELIOS_ASSETS = [
 ]
 
 # 仿真超时时间（秒）
-SIMULATION_TIMEOUT = int(os.getenv("FEHALS_SIM_TIMEOUT", "300"))
+SIMULATION_TIMEOUT = int(os.getenv("FEHALS_SIM_TIMEOUT", "60000"))
 
 # CORS 允许来源（开发环境放开）
 CORS_ORIGINS = [o for o in os.getenv("FEHALS_CORS_ORIGINS", "*").split(",") if o]
