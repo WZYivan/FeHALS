@@ -44,6 +44,7 @@
 \newcommand{\refFig}[1]{\hyperref[#1]{Fig.~\ref*{#1}}}
 \newcommand{\refApp}[1]{\hyperref[#1]{Appendix~\ref*{#1}}}
 \renewcommand{\figurename}{Fig.}
+\newcommand{\Coding}[1]{代码实现 (\textcolor{hscolor}{#1})}
 
 \newcommand{\FeHALSRepo}{\href{https://github.com/WZYivan/FeHALS}{FeHALS github Main Repo}}
 
@@ -89,19 +90,19 @@
 
 \author[1]{王 孜悠}[style=chinese, orcid=2310604116]
 \ead{WZYivan}
-\credit{文档编写, 思路构建, 代码实现, 功能验证, 项目管理, 代码审查, 图表绘制}
+\credit{文档编写, 思路构建, \Coding{FeHALS最小可用的基本框架}, 功能验证, 项目管理, 代码审查, 图表绘制}
 
 \author[1]{温 璞}[style=chinese, orcid=2310604117]
 \ead{wenpu123@users.noreply.github.com}
-\credit{代码实现, 可视化}
+\credit{\Coding{仿真回放}, 可视化}
 
 \author[1]{梅 康凯}[style=chinese, orcid=2310604109]
 \ead{zhangqilinghy}
-\credit{代码实现, 系统适配}
+\credit{\Coding{航高自动计算与Windows启动器}, 系统适配}
 
 \author[1]{唐 如意}[style=chinese, orcid=2310604115]
 \ead{Try6743}
-\credit{代码实现}
+\credit{\Coding{点云基本特征统计与大范围点云解析性能提升}}
 
 \author[1]{杨 杰瑞}[style=chinese, orcid=2310604122]
 \ead{19951391030yjr-sudo}
@@ -113,15 +114,15 @@
 
 \author[1]{李 英杰}[style=chinese, orcid=2310604106]
 \ead{1589428766@qq.com}
-\credit{代码实现, 系统适配}
+\credit{\Coding{HELIOS++ 仿真引擎可用性监测}, 系统适配}
 
 \author[1]{施 祺}[style=chinese, orcid=2310604113]
 \ead{69901001+nidie1@users.noreply.github.com}
-\credit{代码实现}
+\credit{\Coding{点云覆盖度分析}}
 
 \author[1]{刘 继明}[style=chinese, orcid=2110604112]
 \ead{2360122668@qq.com}
-\credit{代码实现}
+\credit{\Coding{多任务队列调度}}
 
 \author[1]{向 宇鸣}[style=chinese, orcid=2310604118]
 \credit{暂无贡献}
@@ -273,6 +274,9 @@ helios\_service.py维护仿真任务注册表，通过asyncio.create\_subprocess
 后续工作将在以下方面展开：（1）实现HELIOS++运行环境自动检测与诊断，系统启动时检测helios++可执行文件是否可用、资源目录（--assets）是否完整，并在前端设置面板中直观显示检测结果，缺失时提供从源码构建到配置的完整引导提示；（2）提供应用环境一键部署方案，包括Conda环境配置文件（environment.yml）与自动安装脚本，实现Python依赖、Node.js依赖与前端构建的自动化，并可扩展Docker容器化部署方式；（3）引入航高自动计算，根据场景中模型最高点自动推荐安全飞行高度；（4）实现仿真任务队列管理，支持多任务顺序执行与并发调度，显示任务列表与状态；（5）增强点云后处理能力，提供覆盖度分析、密度热力图与特征统计等分析功能；（6）优化大规模点云的渲染性能，采用分层细节（LOD）与八叉树等结构支撑千万级点云的流畅交互；（7）拓展扫描器与平台规格库，支持用户自定义参数配置；（8）实现仿真过程动画，逐点或逐线显示点云生成过程。
 
 \printcredits
+\section*{FeHALS 最小可用的基本框架}
+指包含3D窗口、模型管理与渲染、航迹规划、仿真参数设置、HELIOS++配置生成、HELIOS++引擎连接、点云载入与渲染、点云导出、配置导出的可扩展框架。
+
 \newpage
 \appendix
 
