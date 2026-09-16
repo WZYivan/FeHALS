@@ -277,14 +277,13 @@ helios\_service.py维护仿真任务注册表，通过asyncio.create\_subprocess
 \section*{FeHALS 最小可用的基本框架}
 指包含3D窗口、模型管理与渲染、航迹规划、仿真参数设置、HELIOS++配置生成、HELIOS++引擎连接、点云载入与渲染、点云导出、配置导出的可扩展框架。
 
-\newpage
 \appendix
 
 \section{详细的贡献}\label{app:git}
 
 \begin{figure}[pos=!htbp]
     \centering
-    \includegraphics[width=\textwidth, height=0.9\textheight, keepaspectratio]{figs/gitgraph.pdf}
+    \includegraphics[width=\textwidth, height=0.8\textheight, keepaspectratio]{figs/gitgraph.pdf}
     \caption{基于git历史的详细贡献图，用户名的对应关系见首页脚注}
 \end{figure}
 
@@ -371,6 +370,21 @@ helios\_service.py维护仿真任务注册表，通过asyncio.create\_subprocess
         \caption{车载}
     \end{subfigure}
     \caption{地基平台}
+\end{figure}
+
+\begin{figure}[pos=!htbp]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/pointcloud_indoor_with_model.png}
+        \caption{包含原始模型}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figs/pointcloud_indoor_without_model.png}
+        \caption{除去原始模型}
+    \end{subfigure}
+    \caption{室内场景}
 \end{figure}
 
 \FloatBarrier
