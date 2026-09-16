@@ -188,7 +188,7 @@ export const SCANNERS = [
     optics: 'rotating (16ch)',
     description: '16 通道旋转式激光雷达，垂直 FOV 30°',
     params: {
-      scan_freq: { label: '扫描频率', unit: 'Hz', default: null, readonly: true, note: '由转头转速决定（最高 7200°/s）' },
+      scan_freq: { label: '扫描频率', unit: 'Hz', min: 5, max: 20, step: 1, default: 10, note: '即转头转速（5~20 Hz = 1800~7200°/s）' },
       scan_angle: { label: '扫描角度', unit: '±deg', default: null, readonly: true, note: '多通道固定 ±15° 垂直视场' },
       pulse_freq: { label: '脉冲频率', unit: 'kHz', min: 18.75, max: 18.75, step: 1, default: 18.75, readonly: true },
       beamDivergence: { label: '光束发散角', unit: 'mrad', default: 0.7, readonly: true },
@@ -203,7 +203,7 @@ export const SCANNERS = [
     optics: 'rotating (64ch)',
     description: '64 通道旋转式激光雷达，垂直 FOV 26.8°',
     params: {
-      scan_freq: { label: '扫描频率', unit: 'Hz', default: null, readonly: true, note: '由转头转速决定（最高 5400°/s）' },
+      scan_freq: { label: '扫描频率', unit: 'Hz', min: 5, max: 15, step: 1, default: 10, note: '即转头转速（5~15 Hz = 1800~5400°/s）' },
       scan_angle: { label: '扫描角度', unit: '±deg', default: null, readonly: true, note: '64 通道固定垂直视场' },
       pulse_freq: { label: '脉冲频率', unit: 'kHz', min: 20.833, max: 20.833, step: 1, default: 20.833, readonly: true },
       beamDivergence: { label: '光束发散角', unit: 'mrad', default: 3.4, readonly: true },
