@@ -7,6 +7,7 @@ HELIOS++ 的仿真输入是一个 survey XML，它引用：
 这些 data/... 相对引用通过 `helios++ --assets <dir>` 解析。
 """
 import json
+import math
 import time
 import xml.sax.saxutils as sx
 from pathlib import Path
@@ -31,6 +32,16 @@ SCANNER_FILE_MAP = {
     "riegl_vz400": ("scanners_tls.xml", "riegl_vz400"),
     "livox-avia-non-repetitive": ("scanners_tls.xml", "livox-avia-non-repetitive"),
 }
+
+# 静态平台（TLS 三脚架，type="static"）：无轨迹，固定坐标扫描
+STATIC_PLATFORMS = {"tripod", "tripod_down"}
+
+# 地面车载平台（MLS，type="linearpath" 但 onGround）：逐航点 leg，无 interpolated
+GROUND_PLATFORMS = {"vehicle_linearpath"}
+
+# 360° 旋转 LiDAR（optics=rotating 且 scanFreq=0）：需显式头部转动，否则只扫单方向
+# 转头转速 = 扫描频率(Hz) × 360（deg/s）
+SPINNING_SCANNERS = {"vlp16", "velodyne_hdl-64e"}
 
 # 无模型时的默认地面场景（通过 --assets 仓库根目录解析）
 _DEFAULT_GROUNDPLANE = "data/sceneparts/basic/groundplane/groundplane.obj"
@@ -131,13 +142,68 @@ def generate_scene_xml(
     return xml_path, scene_id
 
 
+def _read_trajectory_waypoints(traj_path: str) -> list[tuple[float, float]]:
+    """解析 .trj 文件，返回航点 (x, y) 列表。
+
+    .trj 列顺序：t, roll, pitch, yaw, x, y, z（索引 0-6）。
+    跳过 '#' 注释行与表头。
+    """
+    pts: list[tuple[float, float]] = []
+    try:
+        with open(traj_path, "r", errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split(",")
+                if len(parts) < 7:
+                    continue
+                try:
+                    x = float(parts[4])
+                    y = float(parts[5])
+                except ValueError:
+                    continue
+                pts.append((x, y))
+    except OSError:
+        pass
+    return pts
+
+
+def _trajectory_duration(traj_path: str) -> float:
+    """返回 .trj 文件最后一行的时间列（列 0），用于头部转动 stop 计算。"""
+    dur = 0.0
+    try:
+        with open(traj_path, "r", errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split(",")
+                if len(parts) < 7:
+                    continue
+                try:
+                    dur = float(parts[0])
+                except ValueError:
+                    continue
+    except OSError:
+        pass
+    return dur
+
+
 def generate_survey_xml(
     scene_xml_path: str,
     scene_id: str,
     traj_path: str,
     params: dict,
 ) -> Path:
-    """生成 survey XML，返回其路径。"""
+    """生成 survey XML，返回其路径。
+
+    按平台类型分三种生成方式：
+      - 静态平台（tripod/tripod_down）：直接引用 platform + 固定坐标，无轨迹
+      - 地面车载（vehicle_linearpath）：逐航点 leg（onGround + movePerSec），无 interpolated
+      - 空中平台（其余）：interpolated + basePlatform + 轨迹（原有行为）
+    另对 360° 旋转 LiDAR 追加头部转动参数，避免只扫单侧。
+    """
     platform_id = params.get("platform_id", "copter_linearpath")
     scanner_id = params.get("scanner_id", "riegl_vux-1uav")
     scanner_file, scanner_id_ref = SCANNER_FILE_MAP.get(
@@ -145,30 +211,108 @@ def generate_survey_xml(
     )
 
     # 参数映射：脉冲频率 kHz -> Hz；±半角 -> 总扫描角
-    pulse_hz = float(params.get("pulse_freq", 50.0)) * 1000.0
-    scan_freq = float(params.get("scan_freq", 10.0))
-    scan_angle_total = float(params.get("scan_angle", 30.0)) * 2.0
+    pulse_hz = float(params.get("pulse_freq", 50.0) or 50.0) * 1000.0
+    scan_freq = float(params.get("scan_freq", 10.0) or 0.0)
+    scan_angle_total = float(params.get("scan_angle", 30.0) or 0.0) * 2.0
+    speed = float(params.get("speed", 5.0) or 5.0)
+
+    # 360° 旋转 LiDAR：需显式头部转动
+    head_rotate = None
+    if scanner_id in SPINNING_SCANNERS:
+        # 扫描频率(Hz) → 转头转速(°/s)；旋转 LiDAR 无镜面振荡（scanFreq=0），
+        # 瞬时 FOV 固定 1°，全 360° 靠头部转动。
+        head_rotate = scan_freq * 360.0
+        scan_freq = 0.0
+        scan_angle_total = 1.0
+
+    waypoints = _read_trajectory_waypoints(traj_path)
+    traj_dur = _trajectory_duration(traj_path)
 
     survey_name = f"fehals_survey_{int(time.time() * 1000)}"
+
+    # 公共扫描参数（scaset）
+    scaset = (
+        f'    <scannerSettings id="scaset" active="true" '
+        f'pulseFreq_hz="{pulse_hz:g}" scanFreq_hz="{scan_freq:g}" '
+        f'scanAngle_deg="{scan_angle_total:g}"'
+    )
+    if head_rotate:
+        scaset += f' headRotatePerSec_deg="{head_rotate:g}"'
+    scaset += "/>\n"
+
+    if platform_id in STATIC_PLATFORMS:
+        # 静态平台：固定坐标，无轨迹
+        x, y = waypoints[0] if waypoints else (0.0, 0.0)
+        platform_attr = f'platform="data/platforms.xml#{platform_id}"'
+        if head_rotate:
+            # 360° 旋转 LiDAR：头部转动 1 秒（转速无关）确定扫描时长
+            rot_attrs = f' headRotateStart_deg="0.0" headRotateStop_deg="{head_rotate:g}"'
+            leg_attrs = ""
+        else:
+            # 无头部转动的扫描仪（如 riegl_vz400）：需要 maxDuration_s 限定扫描时长
+            rot_attrs = ""
+            leg_attrs = ' maxDuration_s="3.0"'
+        leg = (
+            f"        <leg{leg_attrs}>\n"
+            f'            <platformSettings x="{x:.6f}" y="{y:.6f}" z="0.0"/>\n'
+            f'            <scannerSettings template="scaset" trajectoryTimeInterval_s="0.05"{rot_attrs}/>\n'
+            "        </leg>\n"
+        )
+    elif platform_id in GROUND_PLATFORMS:
+        # 地面车载：逐航点 leg，onGround + movePerSec，最后一段关闭扫描
+        platform_attr = f'platform="data/platforms.xml#{platform_id}"'
+        legs = []
+        n = len(waypoints)
+        for i, (x, y) in enumerate(waypoints):
+            is_last = (i == n - 1)
+            active = "" if not is_last else ' active="false"'
+            # 本 leg 时长（用于头部转动 stop）：到下一航点的距离 / 速度
+            if head_rotate and i < n - 1:
+                nx, ny = waypoints[i + 1]
+                dist = math.hypot(nx - x, ny - y)
+                dur = max(0.5, dist / speed)
+                rot_attrs = f' headRotateStart_deg="0.0" headRotateStop_deg="{head_rotate * dur:g}"'
+            else:
+                rot_attrs = ""
+            legs.append(
+                "        <leg>\n"
+                f'            <platformSettings x="{x:.6f}" y="{y:.6f}" z="0" '
+                f'onGround="true" movePerSec_m="{speed:g}"/>\n'
+                f'            <scannerSettings template="scaset" trajectoryTimeInterval_s="0.05"{active}{rot_attrs}/>\n'
+                "        </leg>\n"
+            )
+        leg = "".join(legs)
+    else:
+        # 空中平台：interpolated + trajectory（原有行为）
+        platform_attr = (
+            'platform="interpolated"\n'
+            f'            basePlatform="data/platforms.xml#{platform_id}"'
+        )
+        rot_attrs = ""
+        if head_rotate:
+            stop = max(head_rotate * traj_dur, 3600.0)
+            rot_attrs = f' headRotateStart_deg="0.0" headRotateStop_deg="{stop:g}"'
+        leg = (
+            "        <leg>\n"
+            "            <platformSettings\n"
+            f'                trajectory="{_esc(traj_path)}"\n'
+            '                tIndex="0" xIndex="4" yIndex="5" zIndex="6" '
+            'rollIndex="1" pitchIndex="2" yawIndex="3"\n'
+            '                slopeFilterThreshold="0.0" toRadians="true" syncGPSTime="false"\n'
+            "            />\n"
+            f'            <scannerSettings template="scaset" trajectoryTimeInterval_s="0.05"{rot_attrs}/>\n'
+            "        </leg>\n"
+        )
+
     content = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         "<document>\n"
-        f'    <scannerSettings id="scaset" active="true" '
-        f'pulseFreq_hz="{pulse_hz:g}" scanFreq_hz="{scan_freq:g}" scanAngle_deg="{scan_angle_total:g}"/>\n'
+        f"{scaset}"
         f'    <survey name="{survey_name}"\n'
         f'            scene="{_esc(scene_xml_path)}#{scene_id}"\n'
-        '            platform="interpolated"\n'
-        f'            basePlatform="data/platforms.xml#{platform_id}"\n'
+        f"            {platform_attr}\n"
         f'            scanner="data/{scanner_file}#{scanner_id_ref}">\n'
-        "        <leg>\n"
-        "            <platformSettings\n"
-        f'                trajectory="{_esc(traj_path)}"\n'
-        '                tIndex="0" xIndex="4" yIndex="5" zIndex="6" '
-        'rollIndex="1" pitchIndex="2" yawIndex="3"\n'
-        '                slopeFilterThreshold="0.0" toRadians="true" syncGPSTime="false"\n'
-        "            />\n"
-        '            <scannerSettings template="scaset" trajectoryTimeInterval_s="0.05"/>\n'
-        "        </leg>\n"
+        f"{leg}"
         "    </survey>\n"
         "</document>\n"
     )
