@@ -108,7 +108,7 @@
 \section{系统概述}
 
 \subsection{项目背景}
-FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning）是一个基于Web的三维可视化航路规划与激光仿真系统，旨在解决HELIOS++原生命令行交互复杂、缺乏三维可视化航路规划能力的问题。本系统为航测工程师、遥感研究人员以及相关专业师生提供一个直观易用的平台，支持从场景构建、航路设计、仿真执行到结果可视化的全流程操作。
+FeHALS（Frontend of HELIOS++ for Airborne Laser Scanning，最初面向机载激光扫描，现已扩展支持车载与地基平台）是一个基于Web的三维可视化航路规划与激光仿真系统，旨在解决HELIOS++原生命令行交互复杂、缺乏三维可视化航路规划能力的问题。本系统为航测工程师、遥感研究人员以及相关专业师生提供一个直观易用的平台，支持从场景构建、航路设计、仿真执行到结果可视化的全流程操作。
 
 \subsection{系统架构}
 系统采用浏览器/服务器（B/S）三层架构：
@@ -216,7 +216,7 @@ trajectory\_generator.py将航点数组转换为HELIOS++原生航迹文件（.tr
 
 系统还支持弓字形自动航迹生成：用户在三维场景中点击两个角点定义矩形区域，系统根据设定航线间距自动生成往返覆盖的全覆盖航线，相邻扫描线的X端点次序交替，形成连续往返路径。扫描条带宽度由 $W = 2 \cdot h \cdot \tan(\theta / 2)$ 计算，扫描线间距由 $S = v / f_{\text{scan}}$ 计算，其中 $h$ 为飞行高度，$\theta$ 为总扫描角，$v$ 为飞行速度，$f_{\text{scan}}$ 为扫描频率。
 
-config\_generator.py负责生成HELIOS++所需的两个XML文件：场景文件通过objloader滤镜引用三维模型，并指定模型的up轴（Y-up自动旋转至Z-up）；扫描任务（survey）文件引用场景、平台与扫描器目录，并将平台类型映射为对应的平台目录项（UAV与Airborne均使用`copter\_linearpath`平台、`riegl\_vux-1uav`扫描器），将脉冲频率（kHz）与扫描角（±半角）换算为HELIOS++所需的脉冲频率（Hz）与总扫描角。
+config\_generator.py负责生成HELIOS++所需的两个XML文件：场景文件通过objloader滤镜引用三维模型，并指定模型的up轴（Y-up自动旋转至Z-up）；扫描任务（survey）文件引用场景、平台与扫描器目录，并按平台类型生成相应的survey结构——机载平台采用插值轨迹（platform=\texttt{interpolated}），车载平台逐航点生成贴地leg（onGround + movePerSec），地基静态平台使用固定坐标并限定扫描时长（maxDuration\_s）；对360°旋转LiDAR（Velodyne VLP-16 / HDL-64E）则将其扫描频率（即转头转速）换算为headRotatePerSec参数，并将脉冲频率（kHz）与扫描角（±半角）换算为HELIOS++所需的脉冲频率（Hz）与总扫描角。
 
 \subsection{HELIOS++调用与点云渲染}
 helios\_service.py维护仿真任务注册表，通过asyncio.create\_subprocess\_exec以子进程方式调用helios++可执行文件，指定资源目录（--assets）、输出目录（--output）与输出格式参数，实时捕获其标准输出/错误流并解析进度百分比，经WebSocket推送至前端，同时支持超时终止与任务取消。仿真启动前，前端对全部参数进行范围校验（数据来源于从HELIOS++扫描器目录文件中提取的参数规格库），超出有效范围时拒绝执行并给出提示。系统还提供HELIOS++运行环境诊断功能，通过GET /api/env/diagnose接口检测可执行文件存在性、资源目录完整性和静态工作目录就绪状态，在前端设置面板中集中展示。
